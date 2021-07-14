@@ -4,6 +4,8 @@
 
 **[Get the latest Release](https://github.com/Fahrj/reverse-ssh/releases)**
 
+![Showcase](doc/showcase.gif)
+
 
 ## Features
 
