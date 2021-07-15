@@ -37,7 +37,7 @@ import (
 // The following variables can be set via ldflags
 var (
 	localPassword = "letmeinbrudipls"
-	authorizedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKlbJwr+ueQ0gojy4QWr2sUWcNC/Y9eV9RdY3PLO7Bk/ It's me brudi!"
+	authorizedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKlbJwr+ueQ0gojy4QWr2sUWcNC/Y9eV9RdY3PLO7Bk/ Brudi"
 	version       = "0.0.0-dev"
 )
 
