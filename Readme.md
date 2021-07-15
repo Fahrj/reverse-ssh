@@ -2,7 +2,9 @@
 
 **A statically-linked ssh server with a reverse connection feature for simple yet powerful remote access. Most useful during HackTheBox challenges, CTFs or similar.**
 
-**[Get the latest Release](https://github.com/Fahrj/reverse-ssh/releases)**
+Has been developed and was extensively used during OSCP exam preparation.
+
+**[Get the latest Release](https://github.com/Fahrj/reverse-ssh/releases/latest)**
 
 
 ## Features
