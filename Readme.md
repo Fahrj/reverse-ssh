@@ -60,6 +60,8 @@ Examples:
         reverse-ssh
         reverse-ssh -v -l :4444
   Reverse:
+        reverse-ssh 192.168.0.1
+        reverse-ssh kali@192.168.0.1
         reverse-ssh -p 31337 192.168.0.1
         reverse-ssh -v -b 0 kali@192.168.0.2
 
