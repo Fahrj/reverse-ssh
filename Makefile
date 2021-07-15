@@ -5,6 +5,10 @@ ifneq ($(origin RS_PUB), undefined)
 LDFLAGS := $(LDFLAGS) -X 'main.authorizedKey=$(RS_PUB)'
 endif
 
+ifneq ($(origin RS_SHELL), undefined)
+LDFLAGS := $(LDFLAGS) -X 'main.defaultShell=$(RS_SHELL)'
+endif
+
 ifeq ($(origin RS_PASS), undefined)
 RS_PASS != hexdump -n 8 -e '2/4 "%08x"' /dev/urandom
 endif

@@ -63,7 +63,7 @@ Options:
         -v, Emit log output
 
 <target>
-        Optional target which enables the reverse scenario. Can be prependend with
+        Optional target which enables the reverse scenario. Can be prepended with
         <user>@ to authenticate as a different user than 'reverse' while dialling home.
 
 Credentials:
@@ -144,12 +144,12 @@ $make
 $make compressed
 ```
 
-You can also specify a personalized password (`RS_PASS`) or authorized key (`RS_PUB`) when compiling:
+You can also specify a different default shell (`RS_SHELL`), a personalized password (`RS_PASS`) or an authorized key (`RS_PUB`) when compiling:
 
 ```shell
 $ssh-keygen -t ed25519 -f id_reverse-ssh
 
-$RS_PASS="secret" RS_PUB="$(cat id_reverse-ssh.pub)" make compressed
+$RS_SHELL="/bin/sh" RS_PASS="secret" RS_PUB="$(cat id_reverse-ssh.pub)" make compressed
 ```
 
 ## Contribute
