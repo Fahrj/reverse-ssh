@@ -46,8 +46,8 @@ func makeSSHSessionHandler(shell string) ssh.Handler {
 				}
 			}()
 
-			go func() { io.Copy(f, s) }()
-			go func() { io.Copy(s, f) }()
+			go io.Copy(f, s)
+			go io.Copy(s, f)
 
 			if err := cmd.Wait(); err != nil {
 				log.Println("Session ended with error:", err)

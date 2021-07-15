@@ -119,23 +119,8 @@ func makeSSHSessionHandler(shell string) ssh.Handler {
 				}
 
 				// Link data streams of ssh session and conpty
-				go func() { io.Copy(s, cpty.OutPipe()) }()
-				go func() {
-					reader := bufio.NewReader(s)
-					for {
-						data, err := reader.ReadByte()
-						if err == io.EOF {
-							log.Println("Connection closed by client")
-							return
-						} else if err != nil {
-							log.Println("Error while reading from ssh session:", err)
-						}
-						_, err = cpty.Write([]byte{data})
-						if err != nil {
-							log.Fatalf("Failed to write to conpty: %v", err)
-						}
-					}
-				}()
+				go io.Copy(s, cpty.OutPipe())
+				go io.Copy(cpty.InPipe(), s)
 
 				ps, err := process.Wait()
 				if err != nil {
