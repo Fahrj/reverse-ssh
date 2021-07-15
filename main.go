@@ -55,7 +55,9 @@ Examples:
 	%[1]s -v -b 0 kali@192.168.0.2
 
 Options:
-	-s, Shell to use for incoming connections, e.g. /bin/bash; no effect for windows (default: %[5]s)
+	-s, Shell to use for incoming connections, e.g. /bin/bash; (default: %[5]s)
+		for windows this can only be used to give a path to 'ssh-shellhost.exe' to
+		enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
 	-l, Bind scenario only: listen at this address:port (default: :31337)
 	-p, Reverse scenario only: ssh port at home (default: 22)
 	-b, Reverse scenario only: bind to this port after dialling home (default: 8888)

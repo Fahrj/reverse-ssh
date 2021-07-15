@@ -43,39 +43,57 @@ func makeSSHSessionHandler(shell string) ssh.Handler {
 
 				log.Println("Windows version too old to support ConPTY shell")
 
-				cmd := exec.Command("cmd")
-				cmd.Stdout = s
-				cmd.Stderr = s
-				stdin, err := cmd.StdinPipe()
-				if err != nil {
-					log.Println("Could not create StdInPipe:", err)
-					s.Exit(1)
-					return
-				}
+				var cmd *exec.Cmd
+				if shell == defaultShell {
+					log.Println("Launching primitive cmd hook")
 
-				// Handle input from client
-				go func() {
-					for {
-						// Echo incoming chars back to client
-						echo := io.TeeReader(s, s)
-
-						// Read until next unix line ending (\n)
-						data, err := bufio.NewReader(echo).ReadBytes(byte(13))
-						if err == io.EOF {
-							log.Println("Connection closed by client")
-							return
-						} else if err != nil {
-							log.Println("Error while reading from client:", err)
-						}
-						if len(data) > 0 {
-							// Send linebreak to client for readability
-							s.Write([]byte("\n"))
-
-							// Write data to stdin of cmd with appended windows line endings
-							stdin.Write(append(data[:len(data)-1], "\r\n"...))
-						}
+					cmd = exec.Command("cmd")
+					cmd.Stdout = s
+					cmd.Stderr = s
+					stdin, err := cmd.StdinPipe()
+					if err != nil {
+						log.Println("Could not create StdInPipe:", err)
+						s.Exit(1)
+						return
 					}
-				}()
+
+					// Handle input from client
+					go func() {
+						for {
+							// Echo incoming chars back to client
+							echo := io.TeeReader(s, s)
+
+							// Read until next unix line ending (\n)
+							data, err := bufio.NewReader(echo).ReadBytes(byte(13))
+							if err == io.EOF {
+								log.Println("Connection closed by client")
+								return
+							} else if err != nil {
+								log.Println("Error while reading from client:", err)
+							}
+							if len(data) > 0 {
+								// Send linebreak to client for readability
+								s.Write([]byte("\n"))
+
+								// Write data to stdin of cmd with appended windows line endings
+								stdin.Write(append(data[:len(data)-1], "\r\n"...))
+							}
+						}
+					}()
+				} else {
+					log.Println("Launching shell with ssh-shellhost.exe")
+
+					cmd = exec.Command(shell)
+					cmd.SysProcAttr = &syscall.SysProcAttr{
+						HideWindow:    true,
+						CmdLine:       " " + "---pty cmd", // Must leave a space to the beginning
+						CreationFlags: 0x08000000,
+					}
+					cmd.Stdout = s
+					cmd.Stderr = s
+					cmd.Stdin = s
+
+				}
 
 				if err := cmd.Run(); err != nil {
 					log.Println("Session ended with error:", err)
