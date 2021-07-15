@@ -84,7 +84,7 @@ $sftp -P <RPORT> <RHOST>
 $ssh -p <RPORT> -D 9050 <RHOST>
 ```
 
-For even more convenience, add the following to your `~/.ssh/config`, copy the [ssh private key](id_reverse-ssh.pub) to `~/.ssh/` and simply call `ssh target` or `sftp target` afterwards:
+For even more convenience, add the following to your `~/.ssh/config`, copy the [ssh private key](id_reverse-ssh) to `~/.ssh/` and simply call `ssh target` or `sftp target` afterwards:
 
 ```shell
 Host target
