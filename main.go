@@ -37,7 +37,7 @@ import (
 // The following variables can be set via ldflags
 var (
 	localPassword = "letmeinbrudipls"
-	authorizedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKlbJwr+ueQ0gojy4QWr2sUWcNC/Y9eV9RdY3PLO7Bk/ Brudi"
+	authorizedKey = ""
 	defaultShell  = "/bin/bash"
 	version       = "0.0.0-dev"
 )
@@ -193,20 +193,6 @@ func main() {
 				}
 				return passed
 			}),
-			PublicKeyHandler: ssh.PublicKeyHandler(func(ctx ssh.Context, key ssh.PublicKey) bool {
-				master, _, _, _, err := ssh.ParseAuthorizedKey([]byte(authorizedKey))
-				if err != nil {
-					log.Println("Encountered error while parsing public key:", err)
-					return false
-				}
-				passed := bytes.Compare(key.Marshal(), master.Marshal()) == 0
-				if passed {
-					log.Printf("Successful authentication with ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
-				} else {
-					log.Printf("Invalid ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
-				}
-				return passed
-			}),
 			LocalPortForwardingCallback: ssh.LocalPortForwardingCallback(func(ctx ssh.Context, dhost string, dport uint32) bool {
 				log.Printf("Accepted forward to %s:%d", dhost, dport)
 				return true
@@ -228,6 +214,23 @@ func main() {
 			},
 		}
 	)
+
+	if authorizedKey != "" {
+		server.PublicKeyHandler = ssh.PublicKeyHandler(func(ctx ssh.Context, key ssh.PublicKey) bool {
+			master, _, _, _, err := ssh.ParseAuthorizedKey([]byte(authorizedKey))
+			if err != nil {
+				log.Println("Encountered error while parsing public key:", err)
+				return false
+			}
+			passed := bytes.Compare(key.Marshal(), master.Marshal()) == 0
+			if passed {
+				log.Printf("Successful authentication with ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
+			} else {
+				log.Printf("Invalid ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
+			}
+			return passed
+		})
+	}
 
 	switch len(flag.Args()) {
 	case 0:
