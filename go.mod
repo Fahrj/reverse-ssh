@@ -1,4 +1,4 @@
-module reverse-ssh
+module github.com/Fahrj/reverse-ssh
 
 go 1.15
 
