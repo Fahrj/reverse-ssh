@@ -1,6 +1,3 @@
-RS_VERSION ?= $(shell git describe --tags --always --dirty)
-LDFLAGS := -X 'main.version=$(version)'
-
 ifdef RS_SHELL
 LDFLAGS := $(LDFLAGS) -X 'main.defaultShell=$(RS_SHELL)'
 endif
