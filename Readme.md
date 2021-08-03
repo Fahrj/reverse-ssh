@@ -164,6 +164,18 @@ $ssh-keygen -t ed25519 -f id_reverse-ssh
 $RS_SHELL="/bin/sh" RS_PASS="secret" RS_PUB="$(cat id_reverse-ssh.pub)" make compressed
 ```
 
+### Building for different operating systems or architectures
+
+By default, `reverse-ssh` is compiled for your current OS and architecture, as well as for linux and windows in x86 and x64.
+To compile for other architectures or another OS you can provide environmental variables which match your target, e.g. for linux/arm64:
+
+```shell
+GOARCH=arm64 GOOS=linux make compressed
+```
+
+A list of available targets in format `OS/arch` can be obtained via `go tool dist list`.
+
+
 ## Contribute
 
 Is a mind-blowing feature missing? Anything not working as intended?

@@ -14,6 +14,7 @@ LDFLAGS := $(LDFLAGS) -X 'main.localPassword=$(RS_PASS)'
 
 .PHONY: build
 build: clean
+	CGO_ENABLED=0 					go build -ldflags="$(LDFLAGS) -s -w" -o bin/ .
 	CGO_ENABLED=0 GOARCH=amd64	GOOS=linux	go build -ldflags="$(LDFLAGS) -s -w" -o bin/reverse-sshx64 .
 	CGO_ENABLED=0 GOARCH=386	GOOS=linux	go build -ldflags="$(LDFLAGS) -s -w" -o bin/reverse-sshx86 .
 	CGO_ENABLED=0 GOARCH=amd64	GOOS=windows	go build -ldflags="$(LDFLAGS) -s -w" -o bin/reverse-sshx64.exe .
