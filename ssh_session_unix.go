@@ -28,63 +28,29 @@ import (
 	"github.com/gliderlabs/ssh"
 )
 
-func makeSSHSessionHandler(shell string) ssh.Handler {
-	return func(s ssh.Session) {
-		log.Printf("New login from %s@%s", s.User(), s.RemoteAddr().String())
-		ptyReq, winCh, isPty := s.Pty()
+func createPty(s ssh.Session, shell string) {
+	ptyReq, winCh, _ := s.Pty()
 
-		switch {
-		case isPty:
-			log.Println("PTY requested")
-
-			cmd := exec.Command(shell)
-			cmd.Env = append(cmd.Env, fmt.Sprintf("TERM=%s", ptyReq.Term))
-			f, err := pty.Start(cmd)
-			if err != nil {
-				panic(err)
-			}
-			go func() {
-				for win := range winCh {
-					winSize := &pty.Winsize{Rows: uint16(win.Height), Cols: uint16(win.Width)}
-					pty.Setsize(f, winSize)
-				}
-			}()
-
-			go io.Copy(f, s)
-			go io.Copy(s, f)
-
-			if err := cmd.Wait(); err != nil {
-				log.Println("Session ended with error:", err)
-				s.Exit(1)
-			}
-			log.Println("Session ended normally")
-			s.Exit(0)
-
-		case len(s.Command()) > 0:
-			log.Printf("No PTY requested, executing command: '%s'", s.RawCommand())
-
-			cmd := exec.Command(s.Command()[0], s.Command()[1:]...)
-			// We use StdinPipe to avoid blocking waits on input
-			if stdIn, err := cmd.StdinPipe(); err != nil {
-				io.WriteString(s, err.Error())
-				s.Exit(1)
-			} else {
-				go io.Copy(stdIn, s)
-			}
-			cmd.Stdout = s
-			cmd.Stderr = s
-			if err := cmd.Run(); err != nil {
-				log.Println("Command execution failed:", err)
-				io.WriteString(s, err.Error())
-			}
-			s.Exit(cmd.ProcessState.ExitCode())
-
-		default:
-			log.Println("No PTY requested, no command supplied")
-			select {
-			case <-s.Context().Done():
-				log.Println("Session closed")
-			}
-		}
+	cmd := exec.Command(shell)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("TERM=%s", ptyReq.Term))
+	f, err := pty.Start(cmd)
+	if err != nil {
+		panic(err)
 	}
+	go func() {
+		for win := range winCh {
+			winSize := &pty.Winsize{Rows: uint16(win.Height), Cols: uint16(win.Width)}
+			pty.Setsize(f, winSize)
+		}
+	}()
+
+	go io.Copy(f, s)
+	go io.Copy(s, f)
+
+	if err := cmd.Wait(); err != nil {
+		log.Println("Session ended with error:", err)
+		s.Exit(1)
+	}
+	log.Println("Session ended normally")
+	s.Exit(0)
 }

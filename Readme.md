@@ -27,9 +27,10 @@ Its main strengths are the following:
 **Windows caveats**
 
 A fully interactive powershell on windows relies on [Windows Pseudo Console ConPTY](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/) and thus requires at least `Win10 Build 17763`.
-On earlier versions it still works, but you only get a somewhat interactive, generic reverse shell.
+On earlier versions you can still get an interactive reverse shell that can't handle virtual terminal codes such as arrow keys or keyboard interrupts.
+In such cases you have to append the `cmd` command, i.e. `ssh <OPTIONS> <IP> cmd`.
 
-You can still improve it for older windows versions by dropping [`ssh-shellhost.exe` from OpenSSH for Windows](https://github.com/PowerShell/Win32-OpenSSH/releases/latest) in the same directory as `reverse-ssh` and then use flag `-s ssh-shellhost.exe`.
+You can still achieve full interactive shell access for older windows versions by dropping `ssh-shellhost.exe` [from OpenSSH for Windows](https://github.com/PowerShell/Win32-OpenSSH/releases/latest) in the same directory as `reverse-ssh` and then use flag `-s ssh-shellhost.exe`.
 This will pipe all traffic through `ssh-shellhost.exe`, which mimics a pty and transforms all virtual terminal codes such that windows can understand.
 
 
