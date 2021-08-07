@@ -55,9 +55,15 @@ func createPty(s ssh.Session, shell string) {
 			CmdLine:       " " + "---pty cmd", // Must leave a space to the beginning
 			CreationFlags: 0x08000000,
 		}
+		// We use StdinPipe to avoid blocking on missing input
+		if stdIn, err := cmd.StdinPipe(); err != nil {
+			log.Println("Could not initialize StdInPipe", err)
+			s.Exit(1)
+		} else {
+			go io.Copy(stdIn, s)
+		}
 		cmd.Stdout = s
 		cmd.Stderr = s
-		cmd.Stdin = s
 
 		if err := cmd.Run(); err != nil {
 			log.Println("Session ended with error:", err)
