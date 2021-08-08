@@ -116,7 +116,7 @@ Host target
 ### Full usage
 
 ```shell
-reverseSSH v1.0.0  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
+reverseSSH v1.1.0  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
 
 Usage: reverse-ssh [options] [<user>@]<target>
 
