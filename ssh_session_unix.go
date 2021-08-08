@@ -35,7 +35,7 @@ func createPty(s ssh.Session, shell string) {
 	cmd.Env = append(cmd.Env, fmt.Sprintf("TERM=%s", ptyReq.Term))
 	f, err := pty.Start(cmd)
 	if err != nil {
-		panic(err)
+		log.Fatalln("Could not start shell:", err)
 	}
 	go func() {
 		for win := range winCh {
@@ -47,10 +47,24 @@ func createPty(s ssh.Session, shell string) {
 	go io.Copy(f, s)
 	go io.Copy(s, f)
 
-	if err := cmd.Wait(); err != nil {
-		log.Println("Session ended with error:", err)
-		s.Exit(1)
+	done := make(chan error, 1)
+	go func() { done <- cmd.Wait() }()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			log.Println("Session ended with error:", err)
+		} else {
+			log.Println("Session ended normally")
+		}
+		s.Exit(cmd.ProcessState.ExitCode())
+
+	case <-s.Context().Done():
+		log.Println("Session closed by remote, killing dangling process")
+		if cmd.Process != nil && cmd.ProcessState == nil {
+			if err := cmd.Process.Kill(); err != nil {
+				log.Println("Failed to kill process:", err)
+			}
+		}
 	}
-	log.Println("Session ended normally")
-	s.Exit(0)
 }

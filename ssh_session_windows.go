@@ -33,6 +33,7 @@ import (
 func createPty(s ssh.Session, shell string) {
 	ptyReq, winCh, _ := s.Pty()
 	vsn := windows.RtlGetVersion()
+
 	if vsn.MajorVersion < 10 ||
 		vsn.BuildNumber < 17763 {
 		// Interactive Pty via ssh-shellhost.exe
@@ -59,18 +60,39 @@ func createPty(s ssh.Session, shell string) {
 		if stdIn, err := cmd.StdinPipe(); err != nil {
 			log.Println("Could not initialize StdInPipe", err)
 			s.Exit(1)
+			return
 		} else {
-			go io.Copy(stdIn, s)
+			go func() {
+				if _, err := io.Copy(stdIn, s); err != nil {
+					log.Printf("Error while copying input from %s to stdIn: %s", s.RemoteAddr().String(), err)
+				}
+				if err := stdIn.Close(); err != nil {
+					log.Println("Error while closing stdInPipe:", err)
+				}
+			}()
 		}
 		cmd.Stdout = s
 		cmd.Stderr = s
 
-		if err := cmd.Run(); err != nil {
-			log.Println("Session ended with error:", err)
-			s.Exit(1)
-		} else {
-			log.Println("Session ended normally")
-			s.Exit(0)
+		done := make(chan error, 1)
+		go func() { done <- cmd.Run() }()
+
+		select {
+		case err := <-done:
+			if err != nil {
+				log.Println("Session ended with error:", err)
+			} else {
+				log.Println("Session ended normally")
+			}
+			s.Exit(cmd.ProcessState.ExitCode())
+
+		case <-s.Context().Done():
+			log.Println("Session closed by remote, killing dangling process")
+			if cmd.Process != nil && cmd.ProcessState == nil {
+				if err := cmd.Process.Kill(); err != nil {
+					log.Println("Failed to kill process:", err)
+				}
+			}
 		}
 
 	} else {
@@ -110,13 +132,33 @@ func createPty(s ssh.Session, shell string) {
 		go io.Copy(s, cpty.OutPipe())
 		go io.Copy(cpty.InPipe(), s)
 
-		ps, err := process.Wait()
-		if err != nil {
-			log.Printf("Error waiting for process: %v", err)
-			s.Exit(1)
-			return
+		done := make(chan struct {
+			*os.ProcessState
+			error
+		}, 1)
+		go func() {
+			ps, err := process.Wait()
+			done <- struct {
+				*os.ProcessState
+				error
+			}{ps, err}
+		}()
+
+		select {
+		case result := <-done:
+			if result.error != nil {
+				log.Println("Error waiting for process:", err)
+				s.Exit(1)
+				return
+			}
+			log.Printf("Session ended normally, exit code %d", result.ProcessState.ExitCode())
+			s.Exit(result.ProcessState.ExitCode())
+
+		case <-s.Context().Done():
+			log.Println("Session closed by remote, killing process")
+			if err := process.Kill(); err != nil {
+				log.Println("Failed to kill process:", err)
+			}
 		}
-		log.Printf("Session ended normally, exit code %d", ps.ExitCode())
-		s.Exit(ps.ExitCode())
 	}
 }
