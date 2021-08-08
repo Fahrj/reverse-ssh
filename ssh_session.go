@@ -43,17 +43,41 @@ func makeSSHSessionHandler(shell string) ssh.Handler {
 			if stdIn, err := cmd.StdinPipe(); err != nil {
 				log.Println("Could not initialize StdInPipe", err)
 				s.Exit(1)
+				return
 			} else {
-				go io.Copy(stdIn, s)
+				go func() {
+					if _, err := io.Copy(stdIn, s); err != nil {
+						log.Printf("Error while copying input from %s to stdIn: %s", s.RemoteAddr().String(), err)
+					}
+					if err := stdIn.Close(); err != nil {
+						log.Println("Error while closing stdInPipe:", err)
+					}
+				}()
 			}
 			cmd.Stdout = s
 			cmd.Stderr = s
 
-			if err := cmd.Run(); err != nil {
-				log.Println("Command execution failed:", err)
-				io.WriteString(s, err.Error())
+			done := make(chan error, 1)
+			go func() { done <- cmd.Run() }()
+
+			select {
+			case err := <-done:
+				if err != nil {
+					log.Println("Command execution failed:", err)
+					io.WriteString(s, "Command execution failed: "+err.Error())
+				} else {
+					log.Println("Command execution successful")
+				}
+				s.Exit(cmd.ProcessState.ExitCode())
+
+			case <-s.Context().Done():
+				log.Println("Session closed by remote, killing dangling process")
+				if cmd.Process != nil && cmd.ProcessState == nil {
+					if err := cmd.Process.Kill(); err != nil {
+						log.Println("Failed to kill process:", err)
+					}
+				}
 			}
-			s.Exit(cmd.ProcessState.ExitCode())
 
 		default:
 			log.Println("No PTY requested, no command supplied")
