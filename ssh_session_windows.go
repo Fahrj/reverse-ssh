@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 // reverseSSH - a lightweight ssh server with a reverse connection feature
