@@ -40,17 +40,17 @@ func createSSHSessionHandler(shell string) ssh.Handler {
 
 			cmd := exec.Command(s.Command()[0], s.Command()[1:]...)
 			// We use StdinPipe to avoid blocking on missing input
-			if stdIn, err := cmd.StdinPipe(); err != nil {
-				log.Println("Could not initialize StdInPipe", err)
+			if stdin, err := cmd.StdinPipe(); err != nil {
+				log.Println("Could not initialize stdinPipe", err)
 				s.Exit(1)
 				return
 			} else {
 				go func() {
-					if _, err := io.Copy(stdIn, s); err != nil {
-						log.Printf("Error while copying input from %s to stdIn: %s", s.RemoteAddr().String(), err)
+					if _, err := io.Copy(stdin, s); err != nil {
+						log.Printf("Error while copying input from %s to stdin: %s", s.RemoteAddr().String(), err)
 					}
-					if err := stdIn.Close(); err != nil {
-						log.Println("Error while closing stdInPipe:", err)
+					if err := stdin.Close(); err != nil {
+						log.Println("Error while closing stdinPipe:", err)
 					}
 				}()
 			}
