@@ -6,7 +6,7 @@ Has been developed and was extensively used during OSCP exam preparation.
 
 **[Get the latest Release](https://github.com/Fahrj/reverse-ssh/releases/latest)**
 
-![Showcase](doc/showcase.gif)
+![Showcase](assets/showcase.gif)
 
 
 ## Features
@@ -102,7 +102,7 @@ In the end it's plain ssh, so you could catch the remote port forwarding call co
 Just prepend `<USER>@` and provide the password once asked to do so.
 Dialling home currently is password only, because I didn't feel like baking a private key in there as well yet...
 
-For even more convenience, add the following to your `~/.ssh/config`, copy the [ssh private key](id_reverse-ssh) to `~/.ssh/` and simply call `ssh target` or `sftp target` afterwards:
+For even more convenience, add the following to your `~/.ssh/config`, copy the [ssh private key](assets/id_reverse-ssh) to `~/.ssh/` and simply call `ssh target` or `sftp target` afterwards:
 
 ```
 Host target
