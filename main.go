@@ -32,9 +32,7 @@ var (
 )
 
 func main() {
-	var p params
-
-	setup(&p)
+	p := setupParameters()
 
 	var (
 		forwardHandler = &ssh.ForwardedTCPHandler{}
@@ -89,5 +87,5 @@ func main() {
 		})
 	}
 
-	run(&p, server)
+	run(p, server)
 }
