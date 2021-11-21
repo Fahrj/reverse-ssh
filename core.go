@@ -22,6 +22,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"path"
 	"strings"
@@ -59,14 +60,14 @@ func SFTPHandler(s ssh.Session) {
 	}
 }
 
-func dialHomeAndServe(user string, address string, homeBindPort uint, server ssh.Server, askForPassword bool) error {
+func dialHomeAndListen(username string, address string, homeBindPort uint, askForPassword bool) (net.Listener, error) {
 	var (
 		err    error
 		client *gossh.Client
 	)
 
 	config := &gossh.ClientConfig{
-		User: user,
+		User: username,
 		Auth: []gossh.AuthMethod{
 			gossh.Password(localPassword),
 		},
@@ -90,18 +91,17 @@ func dialHomeAndServe(user string, address string, homeBindPort uint, server ssh
 				gossh.Password(string(data)),
 			}
 		} else {
-			return err
+			return nil, err
 		}
 	}
-	defer client.Close()
 
 	ln, err := client.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", homeBindPort))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.Printf("Success: listening on port %d at home", homeBindPort)
-	return server.Serve(ln)
+	return ln, nil
 }
 
 func setupParameters() *params {
@@ -181,15 +181,22 @@ Credentials:
 }
 
 func run(p *params, server ssh.Server) {
-	switch len(flag.Args()) {
-	case 0:
+	var (
+		ln  net.Listener
+		err error
+	)
+
+	if p.LADDR == "" {
 		log.Printf("Starting ssh server on %s", p.bindAddr)
-		log.Fatal(server.ListenAndServe())
-	case 1:
+		ln, err = net.Listen("tcp", p.bindAddr)
+	} else {
 		log.Printf("Dialling home via ssh to %s", p.LADDR)
-		log.Fatal(dialHomeAndServe(p.LUSER, p.LADDR, p.homeBindPort, server, p.verbose))
-	default:
-		log.Println("Invalid arguments, check usage!")
-		os.Exit(1)
+		ln, err = dialHomeAndListen(p.LUSER, p.LADDR, p.homeBindPort, p.verbose)
 	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ln.Close()
+	log.Fatal(server.Serve(ln))
 }
