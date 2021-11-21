@@ -25,6 +25,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -145,7 +146,11 @@ Credentials:
 
 	p := params{}
 
-	flag.UintVar(&p.LPORT, "p", 22, "")
+	lport, err := strconv.ParseUint(LPORT, 10, 32)
+	if err != nil {
+		log.Fatal("Cannot convert LPORT: ", err)
+	}
+	flag.UintVar(&p.LPORT, "p", uint(lport), "")
 	flag.UintVar(&p.homeBindPort, "b", 8888, "")
 	flag.BoolVar(&p.listen, "l", false, "")
 	flag.StringVar(&p.shell, "s", defaultShell, "")
@@ -163,7 +168,7 @@ Credentials:
 		target := strings.Split(fmt.Sprintf("%s:%d", flag.Args()[0], p.LPORT), "@")
 		switch len(target) {
 		case 1:
-			p.LUSER = "reverse"
+			p.LUSER = LUSER
 			p.LADDR = target[0]
 		case 2:
 			p.LUSER = target[0]

@@ -9,6 +9,14 @@ endif
 RS_PASS ?= $(shell hexdump -n 8 -e '2/4 "%08x"' /dev/urandom)
 LDFLAGS := $(LDFLAGS) -X 'main.localPassword=$(RS_PASS)'
 
+ifdef LUSER
+LDFLAGS := $(LDFLAGS) -X 'main.LUSER=$(LUSER)'
+endif
+
+ifdef LPORT
+LDFLAGS := $(LDFLAGS) -X 'main.LPORT=$(LPORT)'
+endif
+
 .PHONY: build
 build: clean
 	CGO_ENABLED=0 					go build -ldflags="$(LDFLAGS) -s -w" -o bin/ .
