@@ -59,7 +59,7 @@ func SFTPHandler(s ssh.Session) {
 	}
 }
 
-func dialHomeAndServe(user string, address string, homeBindPort uint, server ssh.Server) error {
+func dialHomeAndServe(user string, address string, homeBindPort uint, server ssh.Server, askForPassword bool) error {
 	var (
 		err    error
 		client *gossh.Client
@@ -78,7 +78,7 @@ func dialHomeAndServe(user string, address string, homeBindPort uint, server ssh
 		client, err = gossh.Dial("tcp", address, config)
 		if err == nil {
 			break
-		} else if strings.HasSuffix(err.Error(), "no supported methods remain") {
+		} else if strings.HasSuffix(err.Error(), "no supported methods remain") && askForPassword {
 			fmt.Println("Enter password:")
 			data, err := terminal.ReadPassword(int(syscall.Stdin))
 			if err != nil {
@@ -187,7 +187,7 @@ func run(p *params, server ssh.Server) {
 		log.Fatal(server.ListenAndServe())
 	case 1:
 		log.Printf("Dialling home via ssh to %s", p.LADDR)
-		log.Fatal(dialHomeAndServe(p.LUSER, p.LADDR, p.homeBindPort, server))
+		log.Fatal(dialHomeAndServe(p.LUSER, p.LADDR, p.homeBindPort, server, p.verbose))
 	default:
 		log.Println("Invalid arguments, check usage!")
 		os.Exit(1)
