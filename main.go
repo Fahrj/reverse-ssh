@@ -155,35 +155,29 @@ func SFTPHandler(s ssh.Session) {
 }
 
 func main() {
-	var (
-		homeSshPort  uint
-		homeBindPort uint
-		shell        string
-		bindAddr     string
-		verbose      bool
-	)
+	var p params
 
 	flag.Usage = func() {
 		fmt.Print(help)
 		os.Exit(1)
 	}
 
-	flag.UintVar(&homeSshPort, "p", 22, "")
-	flag.UintVar(&homeBindPort, "b", 8888, "")
-	flag.StringVar(&shell, "s", defaultShell, "")
-	flag.StringVar(&bindAddr, "l", ":31337", "")
-	flag.BoolVar(&verbose, "v", false, "")
+	flag.UintVar(&p.homeSshPort, "p", 22, "")
+	flag.UintVar(&p.homeBindPort, "b", 8888, "")
+	flag.StringVar(&p.shell, "s", defaultShell, "")
+	flag.StringVar(&p.bindAddr, "l", ":31337", "")
+	flag.BoolVar(&p.verbose, "v", false, "")
 	flag.Parse()
 
-	if !verbose {
+	if !p.verbose {
 		log.SetOutput(ioutil.Discard)
 	}
 
 	var (
 		forwardHandler = &ssh.ForwardedTCPHandler{}
 		server         = ssh.Server{
-			Handler: makeSSHSessionHandler(shell),
-			Addr:    bindAddr,
+			Handler: makeSSHSessionHandler(p.shell),
+			Addr:    p.bindAddr,
 			PasswordHandler: ssh.PasswordHandler(func(ctx ssh.Context, pass string) bool {
 				passed := pass == localPassword
 				if passed {
@@ -234,11 +228,11 @@ func main() {
 
 	switch len(flag.Args()) {
 	case 0:
-		log.Printf("Starting ssh server on %s", bindAddr)
+		log.Printf("Starting ssh server on %s", p.bindAddr)
 		log.Fatal(server.ListenAndServe())
 	case 1:
-		log.Printf("Dialling home via ssh to %s:%d", flag.Args()[0], homeSshPort)
-		log.Fatal(dialHomeAndServe(fmt.Sprintf("%s:%d", flag.Args()[0], homeSshPort), homeBindPort, server))
+		log.Printf("Dialling home via ssh to %s:%d", flag.Args()[0], p.homeSshPort)
+		log.Fatal(dialHomeAndServe(fmt.Sprintf("%s:%d", flag.Args()[0], p.homeSshPort), p.homeBindPort, server))
 	default:
 		log.Println("Invalid arguments, check usage!")
 		os.Exit(1)
