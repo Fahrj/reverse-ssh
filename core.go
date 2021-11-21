@@ -40,7 +40,6 @@ type params struct {
 	LPORT        uint
 	homeBindPort uint
 	shell        string
-	bindAddr     string
 	verbose      bool
 }
 
@@ -100,7 +99,7 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 		return nil, err
 	}
 
-	log.Printf("Success: listening on port %d at home", homeBindPort)
+	log.Printf("Success: listening at home on %s", ln.Addr().String())
 	return ln, nil
 }
 
@@ -148,7 +147,6 @@ Credentials:
 	flag.UintVar(&p.LPORT, "p", 22, "")
 	flag.UintVar(&p.homeBindPort, "b", 8888, "")
 	flag.StringVar(&p.shell, "s", defaultShell, "")
-	flag.StringVar(&p.bindAddr, "l", ":31337", "")
 	flag.BoolVar(&p.verbose, "v", false, "")
 	flag.Parse()
 
@@ -187,8 +185,11 @@ func run(p *params, server ssh.Server) {
 	)
 
 	if p.LADDR == "" {
-		log.Printf("Starting ssh server on %s", p.bindAddr)
-		ln, err = net.Listen("tcp", p.bindAddr)
+		log.Printf("Starting ssh server on :%d", p.LPORT)
+		ln, err = net.Listen("tcp", fmt.Sprintf(":%d", p.LPORT))
+		if err == nil {
+			log.Printf("Success: listening on %s", ln.Addr().String())
+		}
 	} else {
 		log.Printf("Dialling home via ssh to %s", p.LADDR)
 		ln, err = dialHomeAndListen(p.LUSER, p.LADDR, p.homeBindPort, p.verbose)

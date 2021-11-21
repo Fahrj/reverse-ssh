@@ -38,7 +38,6 @@ func main() {
 		forwardHandler = &ssh.ForwardedTCPHandler{}
 		server         = ssh.Server{
 			Handler: makeSSHSessionHandler(p.shell),
-			Addr:    p.bindAddr,
 			PasswordHandler: ssh.PasswordHandler(func(ctx ssh.Context, pass string) bool {
 				passed := pass == localPassword
 				if passed {
