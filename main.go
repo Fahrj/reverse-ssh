@@ -29,6 +29,8 @@ var (
 	authorizedKey = ""
 	defaultShell  = "/bin/bash"
 	version       = "1.2.0-dev"
+	LUSER         = "reverse"
+	LPORT         = "31337"
 )
 
 func main() {
