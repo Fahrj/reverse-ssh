@@ -65,10 +65,6 @@ func dialHomeAndServe(user string, address string, homeBindPort uint, server ssh
 		client *gossh.Client
 	)
 
-	if homeBindPort > 0xffff || homeBindPort < 0 {
-		return fmt.Errorf("%d is not a valid port number", homeBindPort)
-	}
-
 	config := &gossh.ClientConfig{
 		User: user,
 		Auth: []gossh.AuthMethod{
