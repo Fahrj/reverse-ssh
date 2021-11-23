@@ -37,7 +37,7 @@ import (
 
 type params struct {
 	LUSER        string
-	LADDR        string
+	LHOST        string
 	LPORT        uint
 	homeBindPort uint
 	listen       bool
@@ -163,16 +163,17 @@ Credentials:
 
 	switch len(flag.Args()) {
 	case 0:
-		p.LADDR = ""
+		p.LUSER = LUSER
+		p.LHOST = LHOST
 	case 1:
-		target := strings.Split(fmt.Sprintf("%s:%d", flag.Args()[0], p.LPORT), "@")
+		target := strings.Split(flag.Args()[0], "@")
 		switch len(target) {
 		case 1:
 			p.LUSER = LUSER
-			p.LADDR = target[0]
+			p.LHOST = target[0]
 		case 2:
 			p.LUSER = target[0]
-			p.LADDR = target[1]
+			p.LHOST = target[1]
 		default:
 			log.Fatalf("Could not parse '%s'", target)
 		}
@@ -191,15 +192,16 @@ func run(p *params, server ssh.Server) {
 		err error
 	)
 
-	if p.listen || p.LADDR == "" {
+	if p.listen || p.LHOST == "" {
 		log.Printf("Starting ssh server on :%d", p.LPORT)
 		ln, err = net.Listen("tcp", fmt.Sprintf(":%d", p.LPORT))
 		if err == nil {
 			log.Printf("Success: listening on %s", ln.Addr().String())
 		}
 	} else {
-		log.Printf("Dialling home via ssh to %s", p.LADDR)
-		ln, err = dialHomeAndListen(p.LUSER, p.LADDR, p.homeBindPort, p.verbose)
+		target := net.JoinHostPort(p.LHOST, fmt.Sprintf("%d", p.LPORT))
+		log.Printf("Dialling home via ssh to %s", target)
+		ln, err = dialHomeAndListen(p.LUSER, target, p.homeBindPort, p.verbose)
 	}
 
 	if err != nil {

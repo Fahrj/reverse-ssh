@@ -30,6 +30,7 @@ var (
 	defaultShell  = "/bin/bash"
 	version       = "1.2.0-dev"
 	LUSER         = "reverse"
+	LHOST         = ""
 	LPORT         = "31337"
 )
 
