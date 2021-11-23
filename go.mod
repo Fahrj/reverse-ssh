@@ -4,14 +4,14 @@ go 1.15
 
 require (
 	github.com/ActiveState/termtest/conpty v0.5.0
-	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
-	github.com/creack/pty v1.1.13
+	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/creack/pty v1.1.17
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/gliderlabs/ssh v0.3.2
+	github.com/gliderlabs/ssh v0.3.3
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/pkg/sftp v1.13.2-0.20210630171814-35cb1f0616ba
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
-	golang.org/x/sys v0.0.0-20210423185535-09eb48e85fd7
-	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
+	github.com/pkg/sftp v1.13.4
+	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
+	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
