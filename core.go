@@ -24,6 +24,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/user"
 	"path"
 	"strconv"
 	"strings"
@@ -100,9 +101,50 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 	if err != nil {
 		return nil, err
 	}
-
 	log.Printf("Success: listening at home on %s", ln.Addr().String())
+
+	// Attempt to send extra info back home in the info message of an extra ssh channel
+	sendExtraInfo(client, ln.Addr().String())
+
 	return ln, nil
+}
+
+func sendExtraInfo(client *gossh.Client, listeningAddress string) {
+	var currUser string
+	if usr, err := user.Current(); err != nil {
+		currUser = "ERROR"
+	} else {
+		currUser = usr.Username
+	}
+	host, err := os.Hostname()
+	if err != nil {
+		host = "ERROR"
+	}
+	info := fmt.Sprintf(
+		"%s on %s reachable via %s",
+		currUser,
+		host,
+		listeningAddress,
+	)
+	newChan, newReq, err := client.OpenChannel("rs-info", []byte(info))
+	// The receiving end is expected to reject the channel, so "th4nkz" is a sign of success and we ignore it
+	if err != nil && !strings.Contains(err.Error(), "th4nkz") {
+		log.Printf("Could not create info channel: %+v", err)
+	}
+	// If the channel is actually accepted, just close it again
+	if err == nil {
+		go gossh.DiscardRequests(newReq)
+		newChan.Close()
+	}
+}
+
+func extraInfoHandler(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx ssh.Context) {
+	log.Printf(
+		"New connection from %s: %s",
+		conn.RemoteAddr(),
+		string(newChan.ExtraData()),
+	)
+	newChan.Reject(gossh.Prohibited, "th4nkz")
 }
 
 func setupParameters() *params {
