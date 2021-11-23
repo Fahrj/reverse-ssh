@@ -192,8 +192,12 @@ Credentials:
 	if err != nil {
 		log.Fatal("Cannot convert LPORT: ", err)
 	}
+	homeBindPort, err := strconv.ParseUint(BPORT, 10, 32)
+	if err != nil {
+		log.Fatal("Cannot convert BPORT: ", err)
+	}
 	flag.UintVar(&p.LPORT, "p", uint(lport), "")
-	flag.UintVar(&p.homeBindPort, "b", 8888, "")
+	flag.UintVar(&p.homeBindPort, "b", uint(homeBindPort), "")
 	flag.BoolVar(&p.listen, "l", false, "")
 	flag.StringVar(&p.shell, "s", defaultShell, "")
 	flag.BoolVar(&p.verbose, "v", false, "")
