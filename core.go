@@ -33,7 +33,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/sftp"
 	gossh "golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 type params struct {
@@ -83,7 +83,7 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 			break
 		} else if strings.HasSuffix(err.Error(), "no supported methods remain") && askForPassword {
 			fmt.Println("Enter password:")
-			data, err := terminal.ReadPassword(int(syscall.Stdin))
+			data, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
 				log.Println(err)
 				continue
