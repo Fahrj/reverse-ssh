@@ -79,7 +79,7 @@ func main() {
 				log.Println("Encountered error while parsing public key:", err)
 				return false
 			}
-			passed := bytes.Compare(key.Marshal(), master.Marshal()) == 0
+			passed := bytes.Equal(key.Marshal(), master.Marshal())
 			if passed {
 				log.Printf("Successful authentication with ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
 			} else {
