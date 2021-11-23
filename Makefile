@@ -13,6 +13,10 @@ ifdef LUSER
 LDFLAGS := $(LDFLAGS) -X 'main.LUSER=$(LUSER)'
 endif
 
+ifdef LHOST
+LDFLAGS := $(LDFLAGS) -X 'main.LHOST=$(LHOST)'
+endif
+
 ifdef LPORT
 LDFLAGS := $(LDFLAGS) -X 'main.LPORT=$(LPORT)'
 endif
