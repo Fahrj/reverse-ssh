@@ -39,7 +39,7 @@ var (
 	localPassword = "letmeinbrudipls"
 	authorizedKey = ""
 	defaultShell  = "/bin/bash"
-	version       = "1.1.0"
+	version       = "1.2.0-dev"
 )
 
 var help = fmt.Sprintf(`reverseSSH %[2]s  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
