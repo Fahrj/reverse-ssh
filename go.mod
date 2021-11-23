@@ -12,5 +12,6 @@ require (
 	github.com/pkg/sftp v1.13.2-0.20210630171814-35cb1f0616ba
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/sys v0.0.0-20210423185535-09eb48e85fd7
+	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
