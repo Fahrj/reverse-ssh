@@ -21,6 +21,10 @@ ifdef LPORT
 LDFLAGS := $(LDFLAGS) -X 'main.LPORT=$(LPORT)'
 endif
 
+ifdef BPORT
+LDFLAGS := $(LDFLAGS) -X 'main.HomeBindPort=$(BPORT)'
+endif
+
 .PHONY: build
 build: clean
 	CGO_ENABLED=0 					go build -ldflags="$(LDFLAGS) -s -w" -o bin/ .

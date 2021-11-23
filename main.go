@@ -32,6 +32,7 @@ var (
 	LUSER         = "reverse"
 	LHOST         = ""
 	LPORT         = "31337"
+	BPORT         = "8888"
 )
 
 func main() {
