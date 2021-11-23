@@ -39,6 +39,7 @@ type params struct {
 	LADDR        string
 	LPORT        uint
 	homeBindPort uint
+	listen       bool
 	shell        string
 	verbose      bool
 }
@@ -146,6 +147,7 @@ Credentials:
 
 	flag.UintVar(&p.LPORT, "p", 22, "")
 	flag.UintVar(&p.homeBindPort, "b", 8888, "")
+	flag.BoolVar(&p.listen, "l", false, "")
 	flag.StringVar(&p.shell, "s", defaultShell, "")
 	flag.BoolVar(&p.verbose, "v", false, "")
 	flag.Parse()
@@ -184,7 +186,7 @@ func run(p *params, server ssh.Server) {
 		err error
 	)
 
-	if p.LADDR == "" {
+	if p.listen || p.LADDR == "" {
 		log.Printf("Starting ssh server on :%d", p.LPORT)
 		ln, err = net.Listen("tcp", fmt.Sprintf(":%d", p.LPORT))
 		if err == nil {
