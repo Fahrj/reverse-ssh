@@ -61,6 +61,7 @@ func main() {
 			ChannelHandlers: map[string]ssh.ChannelHandler{
 				"direct-tcpip": ssh.DirectTCPIPHandler,
 				"session":      ssh.DefaultSessionHandler,
+				"rs-info":      extraInfoHandler,
 			},
 			RequestHandlers: map[string]ssh.RequestHandler{
 				"tcpip-forward":        forwardHandler.HandleSSHRequest,
