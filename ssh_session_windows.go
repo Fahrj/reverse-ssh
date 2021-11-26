@@ -127,8 +127,14 @@ func createPty(s ssh.Session, shell string) {
 		defer process.Kill()
 
 		// Link data streams of ssh session and conpty
-		go io.Copy(s, cpty.OutPipe())
-		go io.Copy(cpty.InPipe(), s)
+		go func() {
+			io.Copy(s, cpty.OutPipe())
+			s.Close()
+		}()
+		go func() {
+			io.Copy(cpty.InPipe(), s)
+			s.Close()
+		}()
 
 		done := make(chan struct {
 			*os.ProcessState

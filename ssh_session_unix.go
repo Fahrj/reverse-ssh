@@ -47,8 +47,14 @@ func createPty(s ssh.Session, shell string) {
 		}
 	}()
 
-	go io.Copy(f, s)
-	go io.Copy(s, f)
+	go func() {
+		io.Copy(f, s)
+		s.Close()
+	}()
+	go func() {
+		io.Copy(s, f)
+		s.Close()
+	}()
 
 	done := make(chan error, 1)
 	go func() { done <- cmd.Wait() }()
