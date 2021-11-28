@@ -141,6 +141,8 @@ Options:
         -s, Shell to spawn for incoming connections, e.g. /bin/bash; (default: /bin/bash)
                 for windows this can only be used to give a path to 'ssh-shellhost.exe' to
                 enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
+        -N, Deny all incoming shell/exec/subsystem and local port forwarding requests
+                (if only remote port forwarding is needed, e.g. when catching reverse connections)
         -v, Emit log output
 
 <target>

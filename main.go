@@ -52,6 +52,10 @@ func main() {
 				return passed
 			}),
 			LocalPortForwardingCallback: ssh.LocalPortForwardingCallback(func(ctx ssh.Context, dhost string, dport uint32) bool {
+				if p.noShell {
+					log.Printf("Denying local port forwarding request %s:%d", dhost, dport)
+					return false
+				}
 				log.Printf("Accepted forward to %s:%d", dhost, dport)
 				return true
 			}),
@@ -59,6 +63,13 @@ func main() {
 				log.Printf("Attempt to bind at %s:%d granted", host, port)
 				return true
 			}),
+			SessionRequestCallback: func(sess ssh.Session, requestType string) bool {
+				if p.noShell {
+					log.Println("Denying shell/exec/subsystem request")
+					return false
+				}
+				return true
+			},
 			ChannelHandlers: map[string]ssh.ChannelHandler{
 				"direct-tcpip": ssh.DirectTCPIPHandler,
 				"session":      ssh.DefaultSessionHandler,

@@ -43,6 +43,7 @@ type params struct {
 	homeBindPort uint
 	listen       bool
 	shell        string
+	noShell      bool
 	verbose      bool
 }
 
@@ -170,6 +171,8 @@ Options:
 	-s, Shell to spawn for incoming connections, e.g. /bin/bash; (default: %[5]s)
 		for windows this can only be used to give a path to 'ssh-shellhost.exe' to
 		enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
+	-N, Deny all incoming shell/exec/subsystem and local port forwarding requests
+		(if only remote port forwarding is needed, e.g. when catching reverse connections)
 	-v, Emit log output
 
 <target>
@@ -201,6 +204,7 @@ Credentials:
 	flag.UintVar(&p.homeBindPort, "b", uint(homeBindPort), "")
 	flag.BoolVar(&p.listen, "l", false, "")
 	flag.StringVar(&p.shell, "s", defaultShell, "")
+	flag.BoolVar(&p.noShell, "N", false, "")
 	flag.BoolVar(&p.verbose, "v", false, "")
 	flag.Parse()
 
