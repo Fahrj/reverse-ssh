@@ -24,7 +24,7 @@ import (
 	"github.com/gliderlabs/ssh"
 )
 
-func makeSSHSessionHandler(shell string) ssh.Handler {
+func createSSHSessionHandler(shell string) ssh.Handler {
 	return func(s ssh.Session) {
 		log.Printf("New login from %s@%s", s.User(), s.RemoteAddr().String())
 		_, _, isPty := s.Pty()

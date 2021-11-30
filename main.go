@@ -17,9 +17,6 @@
 package main
 
 import (
-	"bytes"
-	"log"
-
 	"github.com/gliderlabs/ssh"
 )
 
@@ -36,71 +33,30 @@ var (
 )
 
 func main() {
-	p := setupParameters()
-
 	var (
+		p              = setupParameters()
 		forwardHandler = &ssh.ForwardedTCPHandler{}
 		server         = ssh.Server{
-			Handler: makeSSHSessionHandler(p.shell),
-			PasswordHandler: ssh.PasswordHandler(func(ctx ssh.Context, pass string) bool {
-				passed := pass == localPassword
-				if passed {
-					log.Printf("Successful authentication with password from %s@%s", ctx.User(), ctx.RemoteAddr().String())
-				} else {
-					log.Printf("Invalid password from %s@%s", ctx.User(), ctx.RemoteAddr().String())
-				}
-				return passed
-			}),
-			LocalPortForwardingCallback: ssh.LocalPortForwardingCallback(func(ctx ssh.Context, dhost string, dport uint32) bool {
-				if p.noShell {
-					log.Printf("Denying local port forwarding request %s:%d", dhost, dport)
-					return false
-				}
-				log.Printf("Accepted forward to %s:%d", dhost, dport)
-				return true
-			}),
-			ReversePortForwardingCallback: ssh.ReversePortForwardingCallback(func(ctx ssh.Context, host string, port uint32) bool {
-				log.Printf("Attempt to bind at %s:%d granted", host, port)
-				return true
-			}),
-			SessionRequestCallback: func(sess ssh.Session, requestType string) bool {
-				if p.noShell {
-					log.Println("Denying shell/exec/subsystem request")
-					return false
-				}
-				return true
-			},
+			Handler:                       createSSHSessionHandler(p.shell),
+			PasswordHandler:               createPasswordHandler(localPassword),
+			PublicKeyHandler:              createPublicKeyHandler(authorizedKey),
+			LocalPortForwardingCallback:   createLocalPortForwardingCallback(p.noShell),
+			ReversePortForwardingCallback: createReversePortForwardingCallback(),
+			SessionRequestCallback:        createSessionRequestCallback(p.noShell),
 			ChannelHandlers: map[string]ssh.ChannelHandler{
 				"direct-tcpip": ssh.DirectTCPIPHandler,
 				"session":      ssh.DefaultSessionHandler,
-				"rs-info":      extraInfoHandler,
+				"rs-info":      createExtraInfoHandler(),
 			},
 			RequestHandlers: map[string]ssh.RequestHandler{
 				"tcpip-forward":        forwardHandler.HandleSSHRequest,
 				"cancel-tcpip-forward": forwardHandler.HandleSSHRequest,
 			},
 			SubsystemHandlers: map[string]ssh.SubsystemHandler{
-				"sftp": SFTPHandler,
+				"sftp": createSFTPHandler(),
 			},
 		}
 	)
-
-	if authorizedKey != "" {
-		server.PublicKeyHandler = ssh.PublicKeyHandler(func(ctx ssh.Context, key ssh.PublicKey) bool {
-			master, _, _, _, err := ssh.ParseAuthorizedKey([]byte(authorizedKey))
-			if err != nil {
-				log.Println("Encountered error while parsing public key:", err)
-				return false
-			}
-			passed := bytes.Equal(key.Marshal(), master.Marshal())
-			if passed {
-				log.Printf("Successful authentication with ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
-			} else {
-				log.Printf("Invalid ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
-			}
-			return passed
-		})
-	}
 
 	run(p, server)
 }
