@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -47,19 +48,82 @@ type params struct {
 	verbose      bool
 }
 
-func SFTPHandler(s ssh.Session) {
-	server, err := sftp.NewServer(s)
-	if err != nil {
-		log.Printf("Sftp server init error: %s\n", err)
-		return
+func createLocalPortForwardingCallback(forbidden bool) ssh.LocalPortForwardingCallback {
+	return func(ctx ssh.Context, dhost string, dport uint32) bool {
+		if forbidden {
+			log.Printf("Denying local port forwarding request %s:%d", dhost, dport)
+			return false
+		}
+		log.Printf("Accepted forward to %s:%d", dhost, dport)
+		return true
+	}
+}
+
+func createReversePortForwardingCallback() ssh.ReversePortForwardingCallback {
+	return func(ctx ssh.Context, host string, port uint32) bool {
+		log.Printf("Attempt to bind at %s:%d granted", host, port)
+		return true
+	}
+}
+
+func createSessionRequestCallback(forbidden bool) ssh.SessionRequestCallback {
+	return func(sess ssh.Session, requestType string) bool {
+		if forbidden {
+			log.Println("Denying shell/exec/subsystem request")
+			return false
+		}
+		return true
+	}
+}
+
+func createPasswordHandler(localPassword string) ssh.PasswordHandler {
+	return func(ctx ssh.Context, pass string) bool {
+		passed := pass == localPassword
+		if passed {
+			log.Printf("Successful authentication with password from %s@%s", ctx.User(), ctx.RemoteAddr().String())
+		} else {
+			log.Printf("Invalid password from %s@%s", ctx.User(), ctx.RemoteAddr().String())
+		}
+		return passed
+	}
+}
+
+func createPublicKeyHandler(authorizedKey string) ssh.PublicKeyHandler {
+	if authorizedKey == "" {
+		return nil
 	}
 
-	log.Printf("New sftp connection from %s", s.RemoteAddr().String())
-	if err := server.Serve(); err == io.EOF {
-		server.Close()
-		log.Println("Sftp connection closed by client")
-	} else if err != nil {
-		log.Println("Sftp server exited with error:", err)
+	return func(ctx ssh.Context, key ssh.PublicKey) bool {
+		master, _, _, _, err := ssh.ParseAuthorizedKey([]byte(authorizedKey))
+		if err != nil {
+			log.Println("Encountered error while parsing public key:", err)
+			return false
+		}
+		passed := bytes.Equal(key.Marshal(), master.Marshal())
+		if passed {
+			log.Printf("Successful authentication with ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
+		} else {
+			log.Printf("Invalid ssh key from %s@%s", ctx.User(), ctx.RemoteAddr().String())
+		}
+		return passed
+	}
+}
+
+func createSFTPHandler() ssh.SubsystemHandler {
+	return func(s ssh.Session) {
+		server, err := sftp.NewServer(s)
+		if err != nil {
+			log.Printf("Sftp server init error: %s\n", err)
+			return
+		}
+
+		log.Printf("New sftp connection from %s", s.RemoteAddr().String())
+		if err := server.Serve(); err == io.EOF {
+			server.Close()
+			log.Println("Sftp connection closed by client")
+		} else if err != nil {
+			log.Println("Sftp server exited with error:", err)
+		}
 	}
 }
 
@@ -139,13 +203,15 @@ func sendExtraInfo(client *gossh.Client, listeningAddress string) {
 	}
 }
 
-func extraInfoHandler(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx ssh.Context) {
-	log.Printf(
-		"New connection from %s: %s",
-		conn.RemoteAddr(),
-		string(newChan.ExtraData()),
-	)
-	newChan.Reject(gossh.Prohibited, "th4nkz")
+func createExtraInfoHandler() ssh.ChannelHandler {
+	return func(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx ssh.Context) {
+		log.Printf(
+			"New connection from %s: %s",
+			conn.RemoteAddr(),
+			string(newChan.ExtraData()),
+		)
+		newChan.Reject(gossh.Prohibited, "th4nkz")
+	}
 }
 
 func setupParameters() *params {
