@@ -51,7 +51,7 @@ func createPty(s ssh.Session, shell string) {
 		}
 		log.Println("Launching shell with ssh-shellhost.exe")
 
-		cmd := exec.Command(shell)
+		cmd := exec.CommandContext(s.Context(), shell)
 		cmd.SysProcAttr = &syscall.SysProcAttr{
 			HideWindow:    true,
 			CmdLine:       " " + "---pty cmd", // Must leave a space to the beginning
@@ -67,9 +67,7 @@ func createPty(s ssh.Session, shell string) {
 				if _, err := io.Copy(stdin, s); err != nil {
 					log.Printf("Error while copying input from %s to stdin: %s", s.RemoteAddr().String(), err)
 				}
-				if err := stdin.Close(); err != nil {
-					log.Println("Error while closing stdinPipe:", err)
-				}
+				s.Close()
 			}()
 		}
 		cmd.Stdout = s
@@ -88,12 +86,8 @@ func createPty(s ssh.Session, shell string) {
 			s.Exit(cmd.ProcessState.ExitCode())
 
 		case <-s.Context().Done():
-			log.Println("Session closed by remote, killing dangling process")
-			if cmd.Process != nil && cmd.ProcessState == nil {
-				if err := cmd.Process.Kill(); err != nil {
-					log.Println("Failed to kill process:", err)
-				}
-			}
+			log.Printf("Session terminated: %s", s.Context().Err())
+			return
 		}
 
 	} else {
@@ -128,6 +122,7 @@ func createPty(s ssh.Session, shell string) {
 		if err != nil {
 			log.Fatalf("Failed to find process: %v", err)
 		}
+		defer process.Kill()
 
 		// Link data streams of ssh session and conpty
 		go io.Copy(s, cpty.OutPipe())
@@ -156,10 +151,8 @@ func createPty(s ssh.Session, shell string) {
 			s.Exit(result.ProcessState.ExitCode())
 
 		case <-s.Context().Done():
-			log.Println("Session closed by remote, killing process")
-			if err := process.Kill(); err != nil {
-				log.Println("Failed to kill process:", err)
-			}
+			log.Printf("Session terminated: %s", s.Context().Err())
+			return
 		}
 	}
 }

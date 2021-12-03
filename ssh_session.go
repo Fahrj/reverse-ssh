@@ -36,9 +36,10 @@ func createSSHSessionHandler(shell string) ssh.Handler {
 			createPty(s, shell)
 
 		case len(s.Command()) > 0:
-			log.Printf("No PTY requested, executing command: '%s'", s.RawCommand())
+			log.Printf("Command execution requested: '%s'", s.RawCommand())
 
-			cmd := exec.Command(s.Command()[0], s.Command()[1:]...)
+			cmd := exec.CommandContext(s.Context(), s.Command()[0], s.Command()[1:]...)
+
 			// We use StdinPipe to avoid blocking on missing input
 			if stdin, err := cmd.StdinPipe(); err != nil {
 				log.Println("Could not initialize stdinPipe", err)
@@ -49,11 +50,10 @@ func createSSHSessionHandler(shell string) ssh.Handler {
 					if _, err := io.Copy(stdin, s); err != nil {
 						log.Printf("Error while copying input from %s to stdin: %s", s.RemoteAddr().String(), err)
 					}
-					if err := stdin.Close(); err != nil {
-						log.Println("Error while closing stdinPipe:", err)
-					}
+					s.Close()
 				}()
 			}
+
 			cmd.Stdout = s
 			cmd.Stderr = s
 
@@ -64,27 +64,24 @@ func createSSHSessionHandler(shell string) ssh.Handler {
 			case err := <-done:
 				if err != nil {
 					log.Println("Command execution failed:", err)
-					io.WriteString(s, "Command execution failed: "+err.Error())
+					io.WriteString(s, "Command execution failed: "+err.Error()+"\n")
 				} else {
 					log.Println("Command execution successful")
 				}
 				s.Exit(cmd.ProcessState.ExitCode())
 
 			case <-s.Context().Done():
-				log.Println("Session closed by remote, killing dangling process")
-				if cmd.Process != nil && cmd.ProcessState == nil {
-					if err := cmd.Process.Kill(); err != nil {
-						log.Println("Failed to kill process:", err)
-					}
-				}
+				log.Printf("Session terminated: %s", s.Context().Err())
+				return
 			}
 
 		default:
 			log.Println("No PTY requested, no command supplied")
 
+			// Keep this open until the session exits, could e.g. be port forwarding
 			select {
 			case <-s.Context().Done():
-				log.Println("Session closed")
+				log.Printf("Session terminated: %s", s.Context().Err())
 			}
 		}
 	}
