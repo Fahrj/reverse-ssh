@@ -81,10 +81,9 @@ func createSSHSessionHandler(shell string) ssh.Handler {
 			log.Println("No PTY requested, no command supplied")
 
 			// Keep this open until the session exits, could e.g. be port forwarding
-			select {
-			case <-s.Context().Done():
-				log.Printf("Session terminated: %s", s.Context().Err())
-			}
+			<-s.Context().Done()
+			log.Printf("Session terminated: %s", s.Context().Err())
+			return
 		}
 	}
 }
