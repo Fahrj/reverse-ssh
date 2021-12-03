@@ -46,7 +46,7 @@ func createPty(s ssh.Session, shell string) {
 			io.WriteString(s, "No ConPTY shell or ssh-shellhost enhanced shell available. "+
 				"Please append 'cmd' to your ssh command to gain shell access, i.e. "+
 				"'ssh <OPTIONS> <IP> cmd'.\n")
-			s.Exit(1)
+			s.Exit(255)
 			return
 		}
 		log.Println("Launching shell with ssh-shellhost.exe")
@@ -60,7 +60,7 @@ func createPty(s ssh.Session, shell string) {
 		// We use StdinPipe to avoid blocking on missing input
 		if stdin, err := cmd.StdinPipe(); err != nil {
 			log.Println("Could not initialize stdinPipe", err)
-			s.Exit(1)
+			s.Exit(255)
 			return
 		} else {
 			go func() {
@@ -80,10 +80,12 @@ func createPty(s ssh.Session, shell string) {
 		case err := <-done:
 			if err != nil {
 				log.Println("Session ended with error:", err)
-			} else {
-				log.Println("Session ended normally")
+				s.Exit(255)
+				return
 			}
+			log.Println("Session ended normally")
 			s.Exit(cmd.ProcessState.ExitCode())
+			return
 
 		case <-s.Context().Done():
 			log.Printf("Session terminated: %s", s.Context().Err())
@@ -144,11 +146,12 @@ func createPty(s ssh.Session, shell string) {
 		case result := <-done:
 			if result.error != nil {
 				log.Println("Error waiting for process:", err)
-				s.Exit(1)
+				s.Exit(255)
 				return
 			}
 			log.Printf("Session ended normally, exit code %d", result.ProcessState.ExitCode())
 			s.Exit(result.ProcessState.ExitCode())
+			return
 
 		case <-s.Context().Done():
 			log.Printf("Session terminated: %s", s.Context().Err())

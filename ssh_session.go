@@ -43,7 +43,7 @@ func createSSHSessionHandler(shell string) ssh.Handler {
 			// We use StdinPipe to avoid blocking on missing input
 			if stdin, err := cmd.StdinPipe(); err != nil {
 				log.Println("Could not initialize stdinPipe", err)
-				s.Exit(1)
+				s.Exit(255)
 				return
 			} else {
 				go func() {
@@ -65,10 +65,12 @@ func createSSHSessionHandler(shell string) ssh.Handler {
 				if err != nil {
 					log.Println("Command execution failed:", err)
 					io.WriteString(s, "Command execution failed: "+err.Error()+"\n")
-				} else {
-					log.Println("Command execution successful")
+					s.Exit(255)
+					return
 				}
+				log.Println("Command execution successful")
 				s.Exit(cmd.ProcessState.ExitCode())
+				return
 
 			case <-s.Context().Done():
 				log.Printf("Session terminated: %s", s.Context().Err())

@@ -57,10 +57,12 @@ func createPty(s ssh.Session, shell string) {
 	case err := <-done:
 		if err != nil {
 			log.Println("Session ended with error:", err)
-		} else {
-			log.Println("Session ended normally")
+			s.Exit(255)
+			return
 		}
+		log.Println("Session ended normally")
 		s.Exit(cmd.ProcessState.ExitCode())
+		return
 
 	case <-s.Context().Done():
 		log.Printf("Session terminated: %s", s.Context().Err())
