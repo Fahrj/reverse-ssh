@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"os/exec"
+	"os/user"
 
 	"github.com/creack/pty"
 	"github.com/gliderlabs/ssh"
@@ -36,6 +37,9 @@ func createPty(s ssh.Session, shell string) {
 	)
 
 	cmd.Env = append(cmd.Env, fmt.Sprintf("TERM=%s", ptyReq.Term))
+	if currentUser, err := user.Current(); err == nil {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("HOME=%s", currentUser.HomeDir))
+	}
 	f, err := pty.Start(cmd)
 	if err != nil {
 		log.Fatalln("Could not start shell:", err)
