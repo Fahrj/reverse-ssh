@@ -30,11 +30,12 @@ var (
 	LHOST         = ""
 	LPORT         = "31337"
 	BPORT         = "8888"
+	NOCLI         = ""
 )
 
 func main() {
 	var (
-		p              = setupParameters()
+		p              = setupParameters(NOCLI)
 		forwardHandler = &ssh.ForwardedTCPHandler{}
 		server         = ssh.Server{
 			Handler:                       createSSHSessionHandler(p.shell),

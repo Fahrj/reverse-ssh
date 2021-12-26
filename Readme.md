@@ -180,6 +180,7 @@ You can also specify one or more of the following environmental variables when c
 * `LHOST` to provide a default LHOST value and make **ReverseSSH default to the reverse scenario**
 * `LPORT` to change the default listening port or port where an ssh connection attempt is sent to
 * `BPORT` to change the default listening port of reverse connections on the attacker machine; **0 means any free port is taken**
+* `NOCLI` with any value removes all user-facing interaction (the binary ignores all supplied flags or arguments)
 
 ```shell
 $ ssh-keygen -t ed25519 -f id_reverse-ssh

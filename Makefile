@@ -25,6 +25,10 @@ ifdef BPORT
 LDFLAGS := $(LDFLAGS) -X 'main.HomeBindPort=$(BPORT)'
 endif
 
+ifdef NOCLI
+LDFLAGS := $(LDFLAGS) -X 'main.NOCLI=$(NOCLI)'
+endif
+
 .PHONY: build
 build: clean
 	CGO_ENABLED=0 					go build -ldflags="$(LDFLAGS) -s -w" -o bin/ .

