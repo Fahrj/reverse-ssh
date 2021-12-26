@@ -174,24 +174,28 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 	return ln, nil
 }
 
+type ExtraInfo struct {
+	CurrentUser      string
+	Hostname         string
+	ListeningAddress string
+}
+
 func sendExtraInfo(client *gossh.Client, listeningAddress string) {
-	var currUser string
+
+	extraInfo := ExtraInfo{ListeningAddress: listeningAddress}
+
 	if usr, err := user.Current(); err != nil {
-		currUser = "ERROR"
+		extraInfo.CurrentUser = "ERROR"
 	} else {
-		currUser = usr.Username
+		extraInfo.CurrentUser = usr.Username
 	}
-	host, err := os.Hostname()
-	if err != nil {
-		host = "ERROR"
+	if hostname, err := os.Hostname(); err != nil {
+		extraInfo.Hostname = "ERROR"
+	} else {
+		extraInfo.Hostname = hostname
 	}
-	info := fmt.Sprintf(
-		"%s on %s reachable via %s",
-		currUser,
-		host,
-		listeningAddress,
-	)
-	newChan, newReq, err := client.OpenChannel("rs-info", []byte(info))
+
+	newChan, newReq, err := client.OpenChannel("rs-info", gossh.Marshal(&extraInfo))
 	// The receiving end is expected to reject the channel, so "th4nkz" is a sign of success and we ignore it
 	if err != nil && !strings.Contains(err.Error(), "th4nkz") {
 		log.Printf("Could not create info channel: %+v", err)
@@ -205,12 +209,20 @@ func sendExtraInfo(client *gossh.Client, listeningAddress string) {
 
 func createExtraInfoHandler() ssh.ChannelHandler {
 	return func(srv *ssh.Server, conn *gossh.ServerConn, newChan gossh.NewChannel, ctx ssh.Context) {
-		log.Printf(
-			"New connection from %s: %s",
-			conn.RemoteAddr(),
-			string(newChan.ExtraData()),
-		)
+		var extraInfo ExtraInfo
+		err := gossh.Unmarshal(newChan.ExtraData(), &extraInfo)
 		newChan.Reject(gossh.Prohibited, "th4nkz")
+		if err != nil {
+			log.Printf("Could not parse extra info from %s", conn.RemoteAddr())
+			return
+		}
+		log.Printf(
+			"New connection from %s: %s on %s reachable via %s",
+			conn.RemoteAddr(),
+			extraInfo.CurrentUser,
+			extraInfo.Hostname,
+			extraInfo.ListeningAddress,
+		)
 	}
 }
 
