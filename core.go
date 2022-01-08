@@ -259,13 +259,13 @@ Options:
 
 <target>
 	Optional target which enables the reverse scenario. Can be prepended with
-	<user>@ to authenticate as a different user other than 'reverse' while dialling home
+	<user>@ to authenticate as a different user other than '%[8]s' while dialling home
 
 Credentials:
 	Accepting all incoming connections from any user with either of the following:
 	 * Password "%[3]s"
 	 * PubKey   "%[4]s"
-`, path.Base(os.Args[0]), version, localPassword, authorizedKey, defaultShell, LPORT, BPORT)
+`, path.Base(os.Args[0]), version, localPassword, authorizedKey, defaultShell, LPORT, BPORT, LUSER)
 
 	flag.Usage = func() {
 		fmt.Print(help)
