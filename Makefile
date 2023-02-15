@@ -22,7 +22,7 @@ LDFLAGS := $(LDFLAGS) -X 'main.LPORT=$(LPORT)'
 endif
 
 ifdef BPORT
-LDFLAGS := $(LDFLAGS) -X 'main.HomeBindPort=$(BPORT)'
+LDFLAGS := $(LDFLAGS) -X 'main.BPORT=$(BPORT)'
 endif
 
 ifdef NOCLI
