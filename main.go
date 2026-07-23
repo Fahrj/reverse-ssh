@@ -23,9 +23,9 @@ import (
 // The following variables can be set via ldflags
 var (
 	localPassword = "letmeinbrudipls"
-	authorizedKey = ""
+	authorizedKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKlbJwr+ueQ0gojy4QWr2sUWcNC/Y9eV9RdY3PLO7Bk/ Brudi"
 	defaultShell  = "/bin/bash"
-	version       = "1.3.0-dev"
+	version       = "1.3.1-dev"
 	LUSER         = "reverse"
 	LHOST         = ""
 	LPORT         = "31337"
@@ -39,8 +39,8 @@ func main() {
 		forwardHandler = &ssh.ForwardedTCPHandler{}
 		server         = ssh.Server{
 			Handler:                       createSSHSessionHandler(p.shell),
-			PasswordHandler:               createPasswordHandler(localPassword),
-			PublicKeyHandler:              createPublicKeyHandler(authorizedKey),
+			PasswordHandler:               createPasswordHandler(p.localPassword),
+			PublicKeyHandler:              createPublicKeyHandler(p.authorizedKey),
 			LocalPortForwardingCallback:   createLocalPortForwardingCallback(p.noShell),
 			ReversePortForwardingCallback: createReversePortForwardingCallback(),
 			SessionRequestCallback:        createSessionRequestCallback(p.noShell),

@@ -6,8 +6,10 @@ ifdef RS_PUB
 LDFLAGS := $(LDFLAGS) -X 'main.authorizedKey=$(RS_PUB)'
 endif
 
-RS_PASS ?= $(shell hexdump -n 8 -e '2/4 "%08x"' /dev/urandom)
+ifdef RS_PASS
+#RS_PASS ?= $(shell hexdump -n 8 -e '2/4 "%08x"' /dev/urandom)
 LDFLAGS := $(LDFLAGS) -X 'main.localPassword=$(RS_PASS)'
+endif
 
 ifdef LUSER
 LDFLAGS := $(LDFLAGS) -X 'main.LUSER=$(LUSER)'
